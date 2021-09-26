@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.11)
 project(paczki_plusplus C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -6,7 +6,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 include(FetchContent)
-
 FetchContent_Declare(json
   GIT_REPOSITORY https://github.com/nlohmann/json.git
   GIT_TAG v3.7.3)
@@ -17,10 +16,32 @@ if(NOT json_POPULATED)
   add_subdirectory(${json_SOURCE_DIR} ${json_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
-set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(BUILD_GAMES    OFF CACHE BOOL "" FORCE)
-add_subdirectory(lib/raylib)
+include(FetchContent)
+    FetchContent_Declare(
+    raylib
+    GIT_REPOSITORY https://github.com/raysan5/raylib.git
+    GIT_TAG 206e1def6f888cbf69bdf0138f4e1a67a0377e4f
+)
+FetchContent_GetProperties(raylib)
+if (NOT raylib_POPULATED)
+    set(FETCHCONTENT_QUIET NO)
+    FetchContent_Populate(raylib)
+    set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(BUILD_GAMES    OFF CACHE BOOL "" FORCE)
+    set(BUILD_TESTING  OFF CACHE BOOL "" FORCE)
+    add_subdirectory(${raylib_SOURCE_DIR} ${raylib_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
 
-add_executable(${PROJECT_NAME} src/main.cpp)
+set(SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/)
+set(HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include/)
+
+set(PROJECT_SOURCES
+    ${SOURCE_DIR}/main.cc
+    ${SOURCE_DIR}/json_loader.cc
+)
+
+add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+
 target_link_libraries(${PROJECT_NAME} PRIVATE raylib nlohmann_json::nlohmann_json)
+target_include_directories(${PROJECT_NAME} PRIVATE ${HEADER_DIR})
 target_compile_definitions(${PROJECT_NAME} PUBLIC ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/")

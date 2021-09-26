@@ -1,23 +1,25 @@
-#include <limits>
-#include <raylib.h>
-#include <raymath.h>
+#include "box_def.h"
+#include "camera.h"
+#include "json_loader.h"
 
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <initializer_list>
 #include <iostream>
+#include <limits>
 #include <list>
-#include <nlohmann/json.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-struct BoxDef {
-  int ref;
-  float x_size;
-  float y_size;
-  float z_size;
-};
+#include <nlohmann/json.hpp>
+#include <raylib.h>
+#include <raymath.h>
+
+using janowski::paczki_cpp::BoxDef;
+using janowski::paczki_cpp::Camera;
+using json = nlohmann::json;
 
 struct CubeCC {
   Vector3 pos;
@@ -25,18 +27,8 @@ struct CubeCC {
   Color color;
 };
 
-using json = nlohmann::json;
-
-int main(int argc, char *argv[]) {
-  if (argc < 2)
-    return 1;
-
-  json data;
-  std::filesystem::path file_path(argv[1]);
-  {
-    std::ifstream file(file_path);
-    file >> data;
-  }
+std::list<CubeCC> getCubes(const std::string &json_file_path) {
+  auto data = janowski::paczki_cpp::jsonFromFile(json_file_path);
 
   std::unordered_map<int, BoxDef> box_types;
 
@@ -60,9 +52,9 @@ int main(int argc, char *argv[]) {
     std::cout << i << std::endl;
   }
 
-  std::list<CubeCC> cubes;
   srand(static_cast<unsigned int>(time(nullptr)));
 
+  std::list<CubeCC> cubes;
   for (auto i : data["Pallets"][0]["BoxPos"]) {
     auto item1 = i["Item1"];
     auto ref = std::stoi(item1["$ref"].get<std::string>());
@@ -87,18 +79,18 @@ int main(int argc, char *argv[]) {
                   static_cast<uint8_t>(rand() % 256), 255};
     cubes.push_back(cube);
   }
+  return cubes;
+}
+
+int main() {
+  std::list<CubeCC> cubes;
 
   const int screenWidth = 800;
   const int screenHeight = 450;
 
   InitWindow(screenWidth, screenHeight, "Paczki C++");
 
-  Camera camera = {0};
-  camera.position = {20.0f, 20.0f, 20.0f};
-  camera.target = {0.0f, 8.0f, 0.0f};
-  camera.up = {0.0f, 1.6f, 0.0f};
-  camera.fovy = 45.0f;
-  camera.projection = CAMERA_PERSPECTIVE;
+  Camera camera({0.f, 0.f, 0.f}, 50.f, 0.f, std::atanf(1), 45.f);
 
   Ray ray = {0};
 
@@ -106,8 +98,6 @@ int main(int argc, char *argv[]) {
   Vector3 g1 = {-50.0f, 0.0f, 50.0f};
   Vector3 g2 = {50.0f, 0.0f, 50.0f};
   Vector3 g3 = {50.0f, 0.0f, -50.0f};
-
-  SetCameraMode(camera, CAMERA_ORBITAL);
 
   SetTargetFPS(60);
 
@@ -128,7 +118,7 @@ int main(int argc, char *argv[]) {
   };
 
   while (!WindowShouldClose()) {
-    UpdateCamera(&camera);
+    // UpdateCamera(&camera);
 
     RayCollision collision{};
     std::string hitObjectName("None");
@@ -136,7 +126,7 @@ int main(int argc, char *argv[]) {
     collision.hit = false;
     Color cursorColor = WHITE;
 
-    ray = GetMouseRay(GetMousePosition(), camera);
+    ray = GetMouseRay(GetMousePosition(), camera.get());
 
     RayCollision groundHitInfo = GetRayCollisionQuad(ray, g0, g1, g2, g3);
 
@@ -165,9 +155,39 @@ int main(int argc, char *argv[]) {
       cubes.erase(hitCubeIt);
     }
 
+    if (IsFileDropped()) {
+      int file_count{};
+      auto file_names_ptr = GetDroppedFiles(&file_count);
+      std::vector<std::string> file_names{};
+      for (auto i = 0; i < file_count; ++i) {
+        file_names.emplace_back(file_names_ptr[i]);
+      }
+      ClearDroppedFiles();
+      cubes = getCubes(file_names.front());
+    }
+
+    if (IsKeyDown(KeyboardKey::KEY_W)) {
+      camera.rotate(Camera::Direction::UP, 0.05f);
+    }
+    if (IsKeyDown(KeyboardKey::KEY_S)) {
+      camera.rotate(Camera::Direction::DOWN, 0.05f);
+    }
+    if (IsKeyDown(KeyboardKey::KEY_A)) {
+      camera.rotate(Camera::Direction::LEFT, 0.05f);
+    }
+    if (IsKeyDown(KeyboardKey::KEY_D)) {
+      camera.rotate(Camera::Direction::RIGHT, 0.05f);
+    }
+    if (IsKeyDown(KeyboardKey::KEY_UP)) {
+      camera.zoom(Camera::Zoom::IN);
+    }
+    if (IsKeyDown(KeyboardKey::KEY_DOWN)) {
+      camera.zoom(Camera::Zoom::OUT);
+    }
+
     BeginDrawing();
     ClearBackground(RAYWHITE);
-    BeginMode3D(camera);
+    BeginMode3D(camera.get());
 
     for (auto &cube : cubes) {
       DrawCube(plus(cube.pos, mul(cube.size, 0.5f)), cube.size.x, cube.size.y,
