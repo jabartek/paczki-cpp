@@ -37,7 +37,13 @@ set(HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include/)
 
 set(PROJECT_SOURCES
     ${SOURCE_DIR}/main.cc
-    ${SOURCE_DIR}/json_loader.cc
+    ${SOURCE_DIR}/json_utils.cc
+
+    ${SOURCE_DIR}/box/instance.cc
+    ${SOURCE_DIR}/box/definition.cc
+    ${SOURCE_DIR}/box/list.cc
+
+    ${SOURCE_DIR}/graphics/box.cc
 )
 
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})

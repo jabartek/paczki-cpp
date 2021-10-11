@@ -1,0 +1,50 @@
+#include "json_utils.h"
+
+#include <filesystem>
+#include <fstream>
+#include <nlohmann/json.hpp>
+#include <string>
+
+#include "misc.h"
+
+namespace janowski::paczki_cpp {
+nlohmann::json loadJson(const std::string& json_file_path) {
+  nlohmann::json data;
+  std::ifstream file(json_file_path);
+  file >> data;
+  return data;
+}
+
+std::unordered_map<long long, box::Definition> getDefinitions(
+    const nlohmann::json& data) {
+  std::unordered_map<long long, box::Definition> definitions;
+  for (const auto& box_def : data["BoxTypes"]) {
+    auto box_id = std::stoll(box_def["$id"].get<std::string>());
+    math::Vector3<float> size{box_def["SizeX"].get<float>(),
+                              box_def["SizeY"].get<float>(),
+                              box_def["SizeZ"].get<float>()};
+    box::Definition definition(std::move(size), misc::generateColor());
+    definitions.emplace(std::make_pair<unsigned long long, box::Definition>(
+        box_id, std::move(definition)));
+  }
+  return definitions;
+}
+std::vector<std::pair<long long, box::Instance>> getInstances(
+    const nlohmann::json& data) {
+  std::vector<std::pair<long long, box::Instance>> instances;
+  for (const auto& instance_def : data["Pallets"][0]["BoxPos"]) {
+    auto reference =
+        std::stoll(instance_def["Item1"]["$ref"].get<std::string>());
+    const auto& position_data = instance_def["Item2"];
+
+    math::Vector3<float> position{position_data["X"].get<float>(),
+                                  position_data["Y"].get<float>(),
+                                  position_data["Z"].get<float>()};
+    bool rotated = position_data["Rotated"].get<bool>();
+    box::Instance instance(nullptr, std::move(position), rotated);
+    instances.emplace_back(std::make_pair<unsigned long long, box::Instance>(
+        reference, std::move(instance)));
+  }
+  return instances;
+}
+}  // namespace janowski::paczki_cpp

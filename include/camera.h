@@ -3,27 +3,32 @@
 #include <raylib.h>
 #include <raymath.h>
 
+#include <cmath>
 #include <memory>
+
 
 namespace janowski::paczki_cpp {
 
 namespace math {
 auto plus(const ::Vector3 &vec1, const ::Vector3 &vec2) -> ::Vector3 {
-  Vector3 vec;
+  ::Vector3 vec;
   vec.x = vec1.x + vec2.x;
   vec.y = vec1.y + vec2.y;
   vec.z = vec1.z + vec2.z;
   return vec;
 };
-} // namespace math
+}  // namespace math
 
 class Camera {
-public:
+ public:
   Camera(::Vector3 target, float distance, float rotation_horizontal,
          float rotation_vertical, float fov)
-      : camera_ptr_(std::make_shared<::Camera>()), target_(target),
-        distance_(distance), rotation_horizontal_(rotation_horizontal),
-        rotation_vertical_(rotation_vertical), fov_(fov) {
+      : camera_ptr_(std::make_shared<::Camera>()),
+        target_(target),
+        distance_(distance),
+        rotation_horizontal_(rotation_horizontal),
+        rotation_vertical_(rotation_vertical),
+        fov_(fov) {
     auto &camera = *camera_ptr_;
     camera.up = {0.f, 1.f, 0.f};
     camera.fovy = fov_;
@@ -55,42 +60,42 @@ public:
 
   void rotate(Direction direction, float angle) {
     switch (direction) {
-    case Direction::UP:
-      rotation_vertical_ += angle;
-      break;
-    case Direction::DOWN:
-      rotation_vertical_ -= angle;
-      break;
-    case Direction::LEFT:
-      rotation_horizontal_ -= angle;
-      break;
-    case Direction::RIGHT:
-      rotation_horizontal_ += angle;
-      break;
-    default:
-      rotation_horizontal_ = 0.f;
-      rotation_vertical_ = 0.f;
+      case Direction::UP:
+        rotation_vertical_ += angle;
+        break;
+      case Direction::DOWN:
+        rotation_vertical_ -= angle;
+        break;
+      case Direction::LEFT:
+        rotation_horizontal_ -= angle;
+        break;
+      case Direction::RIGHT:
+        rotation_horizontal_ += angle;
+        break;
+      default:
+        rotation_horizontal_ = 0.f;
+        rotation_vertical_ = 0.f;
     }
     updateCamera();
   }
 
   void zoom(Zoom zoom) {
     switch (zoom) {
-    case Zoom::IN:
-      distance_ *= 0.975f;
-      break;
-    case Zoom::OUT:
-      distance_ /= 0.975f;
-      break;
-    default:
-      break;
+      case Zoom::IN:
+        distance_ *= 0.975f;
+        break;
+      case Zoom::OUT:
+        distance_ /= 0.975f;
+        break;
+      default:
+        break;
     }
     updateCamera();
   }
 
   ::Camera get() { return ::Camera(*camera_ptr_); }
 
-private:
+ private:
   std::shared_ptr<::Camera> camera_ptr_;
   ::Vector3 target_;
   float distance_;
@@ -98,4 +103,4 @@ private:
   float rotation_vertical_;
   float fov_;
 };
-} // namespace janowski::paczki_cpp
+}  // namespace janowski::paczki_cpp
