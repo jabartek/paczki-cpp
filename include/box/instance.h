@@ -1,9 +1,10 @@
 #pragma once
 #include <memory>
 
+#include "box/definition.h"
 #include "math/bounding_box.h"
 #include "math/vector3.h"
-#include "box/definition.h"
+
 
 namespace janowski::paczki_cpp::box {
 class Instance {
@@ -12,7 +13,9 @@ class Instance {
   const math::Vector3<uint8_t>& color() const;
 
   const math::Vector3<float>& position() const;
+  const math::Vector3<float> positionCenter() const;
   const math::Vector3<float>& size() const;
+  const math::Vector3<float> sizeRotated() const;
   bool rotated() const { return rotated_; }
 
   Instance(std::shared_ptr<Definition> definition_ptr,

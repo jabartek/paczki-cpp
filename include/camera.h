@@ -6,7 +6,6 @@
 #include <cmath>
 #include <memory>
 
-
 namespace janowski::paczki_cpp {
 
 namespace math {
@@ -93,7 +92,9 @@ class Camera {
     updateCamera();
   }
 
-  ::Camera get() { return ::Camera(*camera_ptr_); }
+  ::Camera get() { return *camera_ptr_; }
+
+  inline void set_target(::Vector3 target) { target_ = std::move(target); }
 
  private:
   std::shared_ptr<::Camera> camera_ptr_;

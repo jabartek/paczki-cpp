@@ -20,12 +20,12 @@ std::unordered_map<long long, box::Definition> getDefinitions(
   std::unordered_map<long long, box::Definition> definitions;
   for (const auto& box_def : data["BoxTypes"]) {
     auto box_id = std::stoll(box_def["$id"].get<std::string>());
+    // The following is due to JSON parameter ordering being off
     math::Vector3<float> size{box_def["SizeX"].get<float>(),
-                              box_def["SizeY"].get<float>(),
-                              box_def["SizeZ"].get<float>()};
+                              box_def["SizeZ"].get<float>(),
+                              box_def["SizeY"].get<float>()};
     box::Definition definition(std::move(size), misc::generateColor());
-    definitions.emplace(std::make_pair<unsigned long long, box::Definition>(
-        box_id, std::move(definition)));
+    definitions.insert(std::make_pair(box_id, definition));
   }
   return definitions;
 }
@@ -37,13 +37,13 @@ std::vector<std::pair<long long, box::Instance>> getInstances(
         std::stoll(instance_def["Item1"]["$ref"].get<std::string>());
     const auto& position_data = instance_def["Item2"];
 
+    // The following is due to JSON parameter ordering being off
     math::Vector3<float> position{position_data["X"].get<float>(),
-                                  position_data["Y"].get<float>(),
-                                  position_data["Z"].get<float>()};
+                                  position_data["Z"].get<float>(),
+                                  position_data["Y"].get<float>()};
     bool rotated = position_data["Rotated"].get<bool>();
     box::Instance instance(nullptr, std::move(position), rotated);
-    instances.emplace_back(std::make_pair<unsigned long long, box::Instance>(
-        reference, std::move(instance)));
+    instances.emplace_back(std::make_pair(reference, instance));
   }
   return instances;
 }

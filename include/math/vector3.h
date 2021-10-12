@@ -9,9 +9,9 @@ template <std::convertible_to<float> T>
 class Vector3 {
  public:
   inline Vector3& operator+=(const Vector3<T>& rhs) {
-    x_ += rhs.x_;
-    y_ += rhs.y_;
-    z_ += rhs.z_;
+    x += rhs.x;
+    y += rhs.y;
+    z += rhs.z;
     return *this;
   }
   inline friend Vector3 operator+(Vector3<T> lhs, const Vector3<T>& rhs) {
@@ -20,9 +20,9 @@ class Vector3 {
   }
 
   inline Vector3& operator+=(const T& rhs) {
-    x_ += rhs;
-    y_ += rhs;
-    z_ += rhs;
+    x += rhs;
+    y += rhs;
+    z += rhs;
     return *this;
   }
   inline friend Vector3 operator+(Vector3<T> lhs, const T& rhs) {
@@ -31,9 +31,9 @@ class Vector3 {
   }
 
   inline Vector3& operator*=(const T& rhs) {
-    x_ *= rhs;
-    y_ *= rhs;
-    z_ *= rhs;
+    x *= rhs;
+    y *= rhs;
+    z *= rhs;
     return *this;
   }
   inline friend Vector3 operator*(Vector3<T> lhs, const T& rhs) {
@@ -41,22 +41,16 @@ class Vector3 {
     return lhs;
   }
 
-  inline const T& x() const { return x_; }
-  inline const T& y() const { return y_; }
-  inline const T& z() const { return z_; }
-  inline T& x() { return x_; }
-  inline T& y() { return y_; }
-  inline T& z() { return z_; }
-
   inline Vector3(T x, T y, T z)
-      : x_(std::move(x)), y_(std::move(y)), z_(std::move(z)){};
-      
-  inline explicit Vector3(T val) : x_(val), y_(val), z_(val){};
+      : x(std::move(x)), y(std::move(y)), z(std::move(z)){};
+
+  inline explicit Vector3(T val) : x(val), y(val), z(val){};
 
  private:
-  T x_;
-  T y_;
-  T z_;
+ public:
+  T x;
+  T y;
+  T z;
 };
 
 template <std::convertible_to<float> T>

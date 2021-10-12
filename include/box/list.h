@@ -16,6 +16,13 @@ class List {
     return instances_;
   }
 
+  inline const float x_min() const { return x_min_; }
+  inline const float y_min() const { return y_min_; }
+  inline const float z_min() const { return z_min_; }
+  inline const float x_max() const { return x_max_; }
+  inline const float y_max() const { return y_max_; }
+  inline const float z_max() const { return z_max_; }
+
   void addDefinition(unsigned long long id, Definition definition);
   void addInstance(unsigned long long defId, Instance instance);
 
@@ -27,5 +34,6 @@ class List {
   std::unordered_map<unsigned long long, std::shared_ptr<Definition>>
       definitions_;
   std::list<box::Instance> instances_;
+  float x_min_, x_max_, y_min_, y_max_, z_min_, z_max_;
 };
 }  // namespace janowski::paczki_cpp::box

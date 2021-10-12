@@ -20,6 +20,7 @@
 #include "graphics/box.h"
 #include "json_utils.h"
 #include "math/vector3.h"
+#include "ui/keyboard.h"
 
 using namespace janowski::paczki_cpp;
 using json = nlohmann::json;
@@ -30,7 +31,7 @@ int main() {
 
   const int screenWidth = 800;
   const int screenHeight = 450;
-
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE bitor FLAG_VSYNC_HINT);
   InitWindow(screenWidth, screenHeight, "Paczki C++");
 
   JCamera camera({0.f, 0.f, 0.f}, 50.f, 0.f, std::atanf(1), 45.f);
@@ -63,20 +64,22 @@ int main() {
       hitObjectName = "Ground";
     }
 
-    // CubeCC *hitCube(nullptr);
-    // std::list<CubeCC>::iterator hitCubeIt;
-    // for (auto it = cubes.begin(); it != cubes.end(); ++it) {
-    //   auto &cube = *it;
-    //   RayCollision cubeHitInfo =
-    //       GetRayCollisionBox(ray, {cube.pos, plus(cube.pos, cube.size)});
-    //   if ((cubeHitInfo.hit) && (cubeHitInfo.distance < collision.distance)) {
-    //     collision = cubeHitInfo;
-    //     cursorColor = cube.color;
-    //     hitObjectName = "Klocek";
-    //     hitCube = &cube;
-    //     hitCubeIt = it;
-    //   }
-    // }
+    box::Instance* hit_box{nullptr};
+
+    for (auto i = 0ul; const auto& box : cubes.instances()) {
+      RayCollision cube_hit_info = GetRayCollisionBox(
+          ray,
+          {rayvec(box.position() * graphics::kSizeMultiplier),
+           rayvec((box.position() + box.size()) * graphics::kSizeMultiplier)});
+      if (cube_hit_info.hit && cube_hit_info.distance < collision.distance) {
+        collision = cube_hit_info;
+        const auto& box_color = box.color();
+        cursorColor = {box_color.x, box_color.y, box_color.z, 255u};
+        hitObjectName = "Paczka " + std::to_string(i);
+        hit_box = const_cast<box::Instance*>(&box);
+      }
+      ++i;
+    }
 
     // if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && hitCube) {
     //   cubes.erase(hitCubeIt);
@@ -91,37 +94,21 @@ int main() {
       }
       ClearDroppedFiles();
       cubes = box::List(loadJson(file_names.front()));
-      // cubes = getCubes(file_names.front());
+      camera.set_target(
+          {(cubes.x_min() + cubes.x_max()) / 2.f * graphics::kSizeMultiplier,
+           (cubes.y_min() + cubes.y_max()) / 2.f * graphics::kSizeMultiplier,
+           (cubes.z_min() + cubes.z_max()) / 2.f * graphics::kSizeMultiplier});
+      camera.updateCamera();
     }
 
-    if (IsKeyDown(KeyboardKey::KEY_W)) {
-      camera.rotate(JCamera::Direction::UP, 0.05f);
-    }
-    if (IsKeyDown(KeyboardKey::KEY_S)) {
-      camera.rotate(JCamera::Direction::DOWN, 0.05f);
-    }
-    if (IsKeyDown(KeyboardKey::KEY_A)) {
-      camera.rotate(JCamera::Direction::LEFT, 0.05f);
-    }
-    if (IsKeyDown(KeyboardKey::KEY_D)) {
-      camera.rotate(JCamera::Direction::RIGHT, 0.05f);
-    }
-    if (IsKeyDown(KeyboardKey::KEY_UP)) {
-      camera.zoom(JCamera::Zoom::IN);
-    }
-    if (IsKeyDown(KeyboardKey::KEY_DOWN)) {
-      camera.zoom(JCamera::Zoom::OUT);
-    }
+    ui::handleKeyboard(camera);
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
     BeginMode3D(camera.get());
 
-    for (auto &cube : cubes.instances()) {
-      DrawCube(rayvec((cube.position() + (cube.size() * 0.5f)) * 0.01f),
-               cube.size().x() * 0.01f, cube.size().y() * 0.01f,
-               cube.size().z() * 0.01f,
-               {cube.color().x(), cube.color().y(), cube.color().z(), 255u});
+    for (auto& cube : cubes.instances()) {
+      graphics::drawBox(cube);
     }
 
     if (collision.hit) {
@@ -135,14 +122,9 @@ int main() {
 
       DrawLine3D(collision.point, normalEnd, RED);
     }
-    // if (hitObjectName == "Klocek") {
-    //   DrawCubeWires(plus((*hitCube).pos, mul((*hitCube).size, 0.5f)),
-    //                 (*hitCube).size.x, (*hitCube).size.y, (*hitCube).size.z,
-    //                 {static_cast<uint8_t>(255u - (*hitCube).color.r),
-    //                  static_cast<uint8_t>(255u - (*hitCube).color.g),
-    //                  static_cast<uint8_t>(255u - (*hitCube).color.b),
-    //                  (*hitCube).color.a});
-    // }
+    if (hitObjectName.starts_with("Paczka") && hit_box != nullptr) {
+      graphics::drawBoxOutline(*hit_box);
+    }
 
     DrawRay(ray, MAROON);
 
