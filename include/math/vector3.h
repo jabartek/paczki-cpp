@@ -3,6 +3,7 @@
 #include <raylib.h>
 
 #include <concepts>
+#include <utility>
 
 namespace janowski::paczki_cpp::math {
 template <std::convertible_to<float> T>

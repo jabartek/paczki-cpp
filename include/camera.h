@@ -37,10 +37,10 @@ class Camera {
   }
 
   void updateCamera() {
-    const auto sin_horizontal = std::sinf(rotation_horizontal_);
-    const auto cos_horizontal = std::cosf(rotation_horizontal_);
-    const auto sin_vertical = std::sinf(rotation_vertical_);
-    const auto cos_vertical = std::cosf(rotation_vertical_);
+    const auto sin_horizontal = sinf(rotation_horizontal_);
+    const auto cos_horizontal = cosf(rotation_horizontal_);
+    const auto sin_vertical = sinf(rotation_vertical_);
+    const auto cos_vertical = cosf(rotation_vertical_);
     const auto dist_horizontal = sin_vertical * distance_;
 
     const auto dist_x = sin_horizontal * dist_horizontal;

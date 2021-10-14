@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <cmath>
 #include <initializer_list>
 #include <iostream>
 #include <limits>
@@ -31,10 +32,10 @@ int main() {
 
   const int screenWidth = 800;
   const int screenHeight = 450;
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE bitor FLAG_VSYNC_HINT);
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE bitor FLAG_VSYNC_HINT bitor FLAG_MSAA_4X_HINT);
   InitWindow(screenWidth, screenHeight, "Paczki C++");
 
-  JCamera camera({0.f, 0.f, 0.f}, 50.f, 0.f, std::atanf(1), 45.f);
+  JCamera camera({0.f, 0.f, 0.f}, 50.f, 0.f, atanf(1), 45.f);
 
   Ray ray = {0};
 
