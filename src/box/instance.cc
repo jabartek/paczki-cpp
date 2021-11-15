@@ -2,6 +2,8 @@
 
 namespace janowski::paczki_cpp::box {
 
+const math::Vector3<float> Instance::zero_vec_ = {0.f, 0.f, 0.f};
+
 const math::BoundingBox<float> Instance::bounding_box() const {
   return math::BoundingBox<float>{position_,
                                   position_ + definition_.lock()->size()};
@@ -19,7 +21,7 @@ const math::Vector3<float> Instance::positionCenter() const {
 
 const math::Vector3<float>& Instance::size() const {
   if (definition_.expired()) {
-    return {0.f, 0.f, 0.f};
+    return zero_vec_;
   }
   return definition_.lock()->size();
 }

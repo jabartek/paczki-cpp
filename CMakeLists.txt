@@ -44,6 +44,8 @@ set(PROJECT_SOURCES
     ${SOURCE_DIR}/box/list.cc
 
     ${SOURCE_DIR}/graphics/box.cc
+
+    ${SOURCE_DIR}/schema/sku.cc
 )
 
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})

@@ -65,7 +65,7 @@ int main() {
       hitObjectName = "Ground";
     }
 
-    box::Instance* hit_box{nullptr};
+    std::optional<std::reference_wrapper<const box::Instance>> hit_box{};
 
     for (auto i = 0ul; const auto& box : cubes.instances()) {
       RayCollision cube_hit_info = GetRayCollisionBox(
@@ -77,7 +77,7 @@ int main() {
         const auto& box_color = box.color();
         cursorColor = {box_color.x, box_color.y, box_color.z, 255u};
         hitObjectName = "Paczka " + std::to_string(i);
-        hit_box = const_cast<box::Instance*>(&box);
+        hit_box = box;
       }
       ++i;
     }
@@ -123,7 +123,7 @@ int main() {
 
       DrawLine3D(collision.point, normalEnd, RED);
     }
-    if (hitObjectName.starts_with("Paczka") && hit_box != nullptr) {
+    if (hitObjectName.starts_with("Paczka") && hit_box) {
       graphics::drawBoxOutline(*hit_box);
     }
 

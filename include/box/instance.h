@@ -5,7 +5,6 @@
 #include "math/bounding_box.h"
 #include "math/vector3.h"
 
-
 namespace janowski::paczki_cpp::box {
 class Instance {
  public:
@@ -25,5 +24,7 @@ class Instance {
   math::Vector3<float> position_;
   bool rotated_;
   std::weak_ptr<Definition> definition_;
+
+  static const math::Vector3<float> zero_vec_;
 };
 }  // namespace janowski::paczki_cpp::box
