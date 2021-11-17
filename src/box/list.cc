@@ -1,5 +1,3 @@
-#pragma once
-
 #include "box/list.h"
 
 namespace janowski::paczki_cpp::box {

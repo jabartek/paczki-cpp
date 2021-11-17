@@ -1,10 +1,11 @@
+#include <iterator>
 #include <raylib.h>
 #include <raymath.h>
 
 #include <algorithm>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
-#include <cmath>
 #include <initializer_list>
 #include <iostream>
 #include <limits>
@@ -23,6 +24,7 @@
 #include "math/vector3.h"
 #include "ui/keyboard.h"
 
+
 using namespace janowski::paczki_cpp;
 using json = nlohmann::json;
 using JCamera = janowski::paczki_cpp::Camera;
@@ -32,7 +34,8 @@ int main() {
 
   const int screenWidth = 800;
   const int screenHeight = 450;
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE bitor FLAG_VSYNC_HINT bitor FLAG_MSAA_4X_HINT);
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE bitor FLAG_VSYNC_HINT bitor
+                 FLAG_MSAA_4X_HINT);
   InitWindow(screenWidth, screenHeight, "Paczki C++");
 
   JCamera camera({0.f, 0.f, 0.f}, 50.f, 0.f, atanf(1), 45.f);
@@ -65,26 +68,25 @@ int main() {
       hitObjectName = "Ground";
     }
 
-    std::optional<std::reference_wrapper<const box::Instance>> hit_box{};
+    std::optional<decltype(cubes.instances().begin())> hit_box{};
 
-    for (auto i = 0ul; const auto& box : cubes.instances()) {
+    for (auto box = cubes.instances().begin(); box != cubes.instances().end(); box++) {
       RayCollision cube_hit_info = GetRayCollisionBox(
           ray,
-          {rayvec(box.position() * graphics::kSizeMultiplier),
-           rayvec((box.position() + box.size()) * graphics::kSizeMultiplier)});
+          {rayvec(box->position() * graphics::kSizeMultiplier),
+           rayvec((box->position() + box->size()) * graphics::kSizeMultiplier)});
       if (cube_hit_info.hit && cube_hit_info.distance < collision.distance) {
         collision = cube_hit_info;
-        const auto& box_color = box.color();
+        const auto& box_color = box->color();
         cursorColor = {box_color.x, box_color.y, box_color.z, 255u};
-        hitObjectName = "Paczka " + std::to_string(i);
+        hitObjectName = "Paczka " + std::to_string(std::distance(cubes.instances().begin(), box));
         hit_box = box;
       }
-      ++i;
     }
 
-    // if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && hitCube) {
-    //   cubes.erase(hitCubeIt);
-    // }
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && hit_box) {
+       cubes.instances().erase(*hit_box);
+    }
 
     if (IsFileDropped()) {
       int file_count{};
@@ -124,7 +126,7 @@ int main() {
       DrawLine3D(collision.point, normalEnd, RED);
     }
     if (hitObjectName.starts_with("Paczka") && hit_box) {
-      graphics::drawBoxOutline(*hit_box);
+      graphics::drawBoxOutline(**hit_box);
     }
 
     DrawRay(ray, MAROON);

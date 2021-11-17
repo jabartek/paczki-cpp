@@ -46,6 +46,16 @@ set(PROJECT_SOURCES
     ${SOURCE_DIR}/graphics/box.cc
 
     ${SOURCE_DIR}/schema/sku.cc
+    ${SOURCE_DIR}/schema/box_type.cc
+    ${SOURCE_DIR}/schema/box_pos.cc
+)
+
+
+set(JSON_TEST_SOURCES
+    ${SOURCE_DIR}/test_json.cc
+    ${SOURCE_DIR}/schema/box_pos.cc
+    ${SOURCE_DIR}/schema/box_type.cc
+    ${SOURCE_DIR}/schema/sku.cc
 )
 
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
@@ -53,3 +63,8 @@ add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE raylib nlohmann_json::nlohmann_json)
 target_include_directories(${PROJECT_NAME} PRIVATE ${HEADER_DIR})
 target_compile_definitions(${PROJECT_NAME} PUBLIC ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/")
+
+add_executable(json_test ${JSON_TEST_SOURCES})
+
+target_link_libraries(json_test PRIVATE nlohmann_json::nlohmann_json)
+target_include_directories(json_test PRIVATE ${HEADER_DIR})
