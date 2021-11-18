@@ -3,6 +3,7 @@ project(paczki_plusplus C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
 
 
 include(FetchContent)
@@ -45,14 +46,16 @@ set(PROJECT_SOURCES
 
     ${SOURCE_DIR}/graphics/box.cc
 
-    ${SOURCE_DIR}/schema/sku.cc
+    ${SOURCE_DIR}/schema/data.cc
     ${SOURCE_DIR}/schema/box_type.cc
     ${SOURCE_DIR}/schema/box_pos.cc
+    ${SOURCE_DIR}/schema/sku.cc
 )
 
 
 set(JSON_TEST_SOURCES
     ${SOURCE_DIR}/test_json.cc
+    ${SOURCE_DIR}/schema/data.cc
     ${SOURCE_DIR}/schema/box_pos.cc
     ${SOURCE_DIR}/schema/box_type.cc
     ${SOURCE_DIR}/schema/sku.cc

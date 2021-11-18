@@ -7,9 +7,10 @@
 #include "nlohmann/json.hpp"
 #include "schema/box_pos.h"
 #include "schema/box_type.h"
+#include "schema/data.h"
 #include "schema/sku.h"
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   std::cout << "Hello JSON!" << std::endl;
   if (argc < 2) {
     std::cout << "No JSON path giver!" << std::endl;
@@ -19,7 +20,7 @@ int main(int argc, char* argv[]) {
   std::ifstream content{json_path};
   nlohmann::json json;
   content >> json;
-  for (auto& sku : json["SKUList"]) {
+  for (auto &sku : json["SKUList"]) {
     if (!sku.contains("$id")) {
       continue;
     }
@@ -29,7 +30,7 @@ int main(int argc, char* argv[]) {
 
   std::cout << std::endl;
 
-  for (auto& box_pos : json["Pallets"][0]["BoxPos"]) {
+  for (auto &box_pos : json["Pallets"][0]["BoxPos"]) {
     if (!box_pos.contains("$id")) {
       continue;
     }
@@ -39,7 +40,7 @@ int main(int argc, char* argv[]) {
 
   std::cout << std::endl;
 
-  for (auto& box_type : json["BoxTypes"]) {
+  for (auto &box_type : json["BoxTypes"]) {
     if (!box_type.contains("$id")) {
       continue;
     }
@@ -47,4 +48,12 @@ int main(int argc, char* argv[]) {
     std::cout << new_box_type.id() << '\t' << new_box_type.items().size()
               << std::endl;
   };
+
+  janowski::paczki_cpp::schema::Data data{json};
+
+  for (auto &[id, box_pos] : data.box_positions()) {
+    std::cout << box_pos.box_type_id() << "\t" << box_pos.x() << "\t"
+              << box_pos.y() << "\t" << box_pos.z();
+    std::cout << std::endl;
+  }
 }
