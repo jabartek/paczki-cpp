@@ -1,5 +1,6 @@
 #pragma once
 
+#include "math/vector3.h"
 #include "schema/box_pos.h"
 #include "schema/box_type.h"
 #include "schema/sku.h"
@@ -15,7 +16,7 @@ public:
   using BoxPositions = std::unordered_map<std::string, BoxPos>;
   using BoxTypes = std::unordered_map<std::string, BoxType>;
   using Skus = std::unordered_map<std::string, Sku>;
-  
+
   Data(nlohmann::json &json);
 
   inline const BoxPositions &box_positions() const { return box_postitions_; }
@@ -31,4 +32,6 @@ private:
   BoxTypes box_types_;
   Skus skus_;
 };
+
+using ColorMap = std::unordered_map<std::string, math::Vector3<unsigned char>>;
 } // namespace janowski::paczki_cpp::schema

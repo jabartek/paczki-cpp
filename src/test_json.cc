@@ -1,3 +1,4 @@
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -19,7 +20,15 @@ int main(int argc, char *argv[]) {
   std::filesystem::path json_path(argv[1]);
   std::ifstream content{json_path};
   nlohmann::json json;
+  auto start = std::chrono::high_resolution_clock::now();
   content >> json;
+  auto end = std::chrono::high_resolution_clock::now();
+  std::cout << "JSON load time:\t"
+            << std::chrono::duration_cast<std::chrono::microseconds>(end -
+                                                                     start)
+                   .count()
+            << "us" << std::endl;
+
   for (auto &sku : json["SKUList"]) {
     if (!sku.contains("$id")) {
       continue;
@@ -45,11 +54,19 @@ int main(int argc, char *argv[]) {
       continue;
     }
     janowski::paczki_cpp::schema::BoxType new_box_type{box_type};
-    std::cout << new_box_type.id() << '\t' << new_box_type.items().size()
+    std::cout << new_box_type.id() << "\t" << new_box_type.items().size()
               << std::endl;
   };
 
+  start = std::chrono::high_resolution_clock::now();
   janowski::paczki_cpp::schema::Data data{json};
+  end = std::chrono::high_resolution_clock::now();
+
+  std::cout << "Data load time:\t"
+            << std::chrono::duration_cast<std::chrono::microseconds>(end -
+                                                                     start)
+                   .count()
+            << "us" << std::endl;
 
   for (auto &[id, box_pos] : data.box_positions()) {
     std::cout << box_pos.box_type_id() << "\t" << box_pos.x() << "\t"

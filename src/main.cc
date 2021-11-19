@@ -6,6 +6,7 @@
 #include "graphics/box.h"
 #include "json_utils.h"
 #include "math/vector3.h"
+#include "schema/data.h"
 #include "ui/keyboard.h"
 
 #include <nlohmann/json.hpp>
@@ -31,6 +32,8 @@ using JCamera = janowski::paczki_cpp::Camera;
 
 int main() {
   box::List cubes;
+  std::optional<schema::Data> data;
+  std::optional<schema::ColorMap> colors;
 
   const int screenWidth = 800;
   const int screenHeight = 450;
@@ -70,20 +73,24 @@ int main() {
 
     std::optional<decltype(cubes.instances().begin())> hit_box{};
 
-    for (auto box = cubes.instances().begin(); box != cubes.instances().end();
-         box++) {
-      RayCollision cube_hit_info = GetRayCollisionBox(
-          ray, {rayvec(box->position() * graphics::kSizeMultiplier),
-                rayvec((box->position() + box->size()) *
-                       graphics::kSizeMultiplier)});
-      if (cube_hit_info.hit && cube_hit_info.distance < collision.distance) {
-        collision = cube_hit_info;
-        const auto &box_color = box->color();
-        cursorColor = {box_color.x, box_color.y, box_color.z, 255u};
-        hitObjectName =
-            "Paczka " +
-            std::to_string(std::distance(cubes.instances().begin(), box));
-        hit_box = box;
+    if (data) {
+      for (auto &[id, box_pos] : data->box_positions()) {
+        auto &box_type = data->box_types().at(box_pos.box_type_id());
+        RayCollision cube_hit_info = GetRayCollisionBox(
+            ray,
+            {rayvec(graphics::getPosition(box_pos) * graphics::kSizeMultiplier),
+             rayvec((graphics::getPosition(box_pos) +
+                     graphics::getSize(box_pos, box_type)) *
+                    graphics::kSizeMultiplier)});
+        if (cube_hit_info.hit && cube_hit_info.distance < collision.distance) {
+          collision = cube_hit_info;
+          const auto &box_color =
+              colors ? colors->at(box_pos.id())
+                     : math::Vector3<unsigned char>{0u, 0u, 0u};
+          cursorColor = {box_color.x, box_color.y, box_color.z, 255u};
+          hitObjectName = box_pos.id();
+          // hit_box = box;
+        }
       }
     }
 
@@ -99,22 +106,42 @@ int main() {
         file_names.emplace_back(file_names_ptr[i]);
       }
       ClearDroppedFiles();
+
+      std::ifstream file(file_names.front());
+      nlohmann::json json;
+      file >> json;
+      data = schema::Data{json};
       cubes = box::List(loadJson(file_names.front()));
       camera.set_target(
           {(cubes.x_min() + cubes.x_max()) / 2.f * graphics::kSizeMultiplier,
            (cubes.y_min() + cubes.y_max()) / 2.f * graphics::kSizeMultiplier,
            (cubes.z_min() + cubes.z_max()) / 2.f * graphics::kSizeMultiplier});
       camera.updateCamera();
+      colors = schema::ColorMap{};
+      for (auto &[id, box_pos] : data->box_positions()) {
+        colors->emplace(id, math::Vector3<unsigned char>{
+                                (unsigned char)rand(), (unsigned char)rand(),
+                                (unsigned char)rand()});
+      }
     }
 
     ui::handleKeyboard(camera);
 
     BeginDrawing();
-    ClearBackground(RAYWHITE);
+    ClearBackground(LIGHTGRAY);
     BeginMode3D(camera.get());
 
-    for (auto &cube : cubes.instances()) {
-      graphics::drawBox(cube);
+    if (data && colors) {
+      for (const auto &[id, cube] : data->box_positions()) {
+        auto color = colors->at(cube.id());
+        if (id == hitObjectName) {
+          graphics::drawBoxItems(*data, cube,
+                                 data->box_types().at(cube.box_type_id()),
+                                 color, 100u);
+        } else {
+          graphics::drawBox(*data, cube, color);
+        }
+      }
     }
 
     if (collision.hit) {
@@ -128,8 +155,9 @@ int main() {
 
       DrawLine3D(collision.point, normalEnd, RED);
     }
-    if (hitObjectName.starts_with("Paczka") && hit_box) {
-      graphics::drawBoxOutline(**hit_box);
+    if (!(hitObjectName == "Ground" || hitObjectName == "None")) {
+      graphics::drawBoxOutline(*data, data->box_positions().at(hitObjectName),
+                               colors->at(hitObjectName));
     }
 
     DrawRay(ray, MAROON);
@@ -142,7 +170,26 @@ int main() {
              BLACK);
 
     if (collision.hit) {
-      int ypos = 70;
+      int ypos = 50;
+
+      if (!(hitObjectName == "Ground" || hitObjectName == "None")) {
+        DrawText(
+            TextFormat(
+                "Box Type: %d",
+                std::stoi(
+                    data->box_positions().at(hitObjectName).box_type_id())),
+            10, ypos += 15, 10, BLACK);
+        DrawText(
+            TextFormat(
+                "Items: %d",
+                data->box_types()
+                    .at(data->box_positions().at(hitObjectName).box_type_id())
+                    .items()
+                    .size()),
+            10, ypos += 15, 10, BLACK);
+      }
+
+      ypos += 150;
 
       DrawText(TextFormat("Distance: %3.2f", collision.distance), 10, ypos, 10,
                BLACK);
