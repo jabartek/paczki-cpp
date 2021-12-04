@@ -1,4 +1,7 @@
 #include "graphics/box.h"
+
+#include <raylib.h>
+
 #include "box/instance.h"
 #include "math/vector3.h"
 #include "schema/box_pos.h"
@@ -6,12 +9,11 @@
 #include "schema/data.h"
 #include "schema/sku.h"
 
-#include <raylib.h>
 
 namespace janowski::paczki_cpp::graphics {
 
 void drawBox(const box::Instance &box) {
-  using janowski::paczki_cpp::math::rayvec;
+  using math::rayvec;
   auto size = box.sizeRotated() * kSizeMultiplier;
   auto position = box.positionCenter() * kSizeMultiplier;
   DrawCube(rayvec(position), size.x, size.y, size.z,
@@ -19,8 +21,12 @@ void drawBox(const box::Instance &box) {
 }
 void drawBox(const schema::Data &data, const schema::BoxPos &box_pos,
              const math::Vector3<unsigned char> &color, uint8_t transparency) {
-  using janowski::paczki_cpp::math::rayvec;
-  const auto &box_def = data.box_types().at(box_pos.box_type_id());
+  using math::rayvec;
+  const auto box_def_opt = box_pos.box_type();
+  if (!box_def_opt) {
+    return;
+  }
+  const auto &box_def = box_def_opt->get();
 
   auto size = getSize(box_pos, box_def);
   auto position = getPosition(box_pos) + (size * 0.5f);
@@ -34,7 +40,7 @@ void drawBoxItems(const schema::Data &data, const schema::BoxPos &box_pos,
                   const schema::BoxType &box_type,
                   const math::Vector3<unsigned char> &color,
                   uint8_t transparency) {
-  using janowski::paczki_cpp::math::rayvec;
+  using math::rayvec;
   // drawBox(data, box_pos, color, transparency);
   for (auto &item : box_type.items()) {
     auto &sku = data.skus().at(item.sku_id);
@@ -51,7 +57,7 @@ void drawBoxItems(const schema::Data &data, const schema::BoxPos &box_pos,
 }
 
 void drawBoxOutline(const box::Instance &box) {
-  using janowski::paczki_cpp::math::rayvec;
+  using math::rayvec;
   math::Vector3<float> size = box.sizeRotated() * graphics::kSizeMultiplier;
   size += 0.05f;
   DrawCubeWires(rayvec(box.positionCenter() * graphics::kSizeMultiplier),
@@ -62,7 +68,7 @@ void drawBoxOutline(const box::Instance &box) {
 }
 void drawBoxOutline(const schema::Data &data, const schema::BoxPos &box_pos,
                     const math::Vector3<unsigned char> &color) {
-  using janowski::paczki_cpp::math::rayvec;
+  using math::rayvec;
   const auto &box_def = data.box_types().at(box_pos.box_type_id());
 
   auto size = getSize(box_pos, box_def);
@@ -112,4 +118,4 @@ math::Vector3<float> getItemPosition(const schema::BoxPos &box_pos,
   return box_position + item_position;
 }
 
-} // namespace janowski::paczki_cpp::graphics
+}  // namespace janowski::paczki_cpp::graphics

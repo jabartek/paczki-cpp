@@ -69,5 +69,5 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC ASSETS_PATH="${CMAKE_CURRENT_S
 
 add_executable(json_test ${JSON_TEST_SOURCES})
 
-target_link_libraries(json_test PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(json_test PRIVATE raylib nlohmann_json::nlohmann_json)
 target_include_directories(json_test PRIVATE ${HEADER_DIR})
