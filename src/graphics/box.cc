@@ -9,7 +9,6 @@
 #include "schema/data.h"
 #include "schema/sku.h"
 
-
 namespace janowski::paczki_cpp::graphics {
 
 void drawBox(const box::Instance &box) {
@@ -20,15 +19,10 @@ void drawBox(const box::Instance &box) {
            {box.color().x, box.color().y, box.color().z, 255u});
 }
 void drawBox(const schema::Data &data, const schema::BoxPos &box_pos,
+             const schema::BoxType &box_type,
              const math::Vector3<unsigned char> &color, uint8_t transparency) {
   using math::rayvec;
-  const auto box_def_opt = box_pos.box_type();
-  if (!box_def_opt) {
-    return;
-  }
-  const auto &box_def = box_def_opt->get();
-
-  auto size = getSize(box_pos, box_def);
+  auto size = getSize(box_pos, box_type);
   auto position = getPosition(box_pos) + (size * 0.5f);
   size *= kSizeMultiplier;
   position *= kSizeMultiplier;

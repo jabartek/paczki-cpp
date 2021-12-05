@@ -2,11 +2,11 @@
 
 #include <raylib.h>
 
-#include <concepts>
+// #include <concepts> // TODO: Find out why concepts don't work on Emscripten/Clang on Linux
 #include <utility>
 
 namespace janowski::paczki_cpp::math {
-template <std::convertible_to<float> T> class Vector3 {
+template <typename T> class Vector3 {
 public:
   inline Vector3 &operator+=(const Vector3<T> &rhs) {
     x += rhs.x;

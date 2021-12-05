@@ -1,4 +1,23 @@
 
+#include <raylib.h>
+#include <raymath.h>
+
+#include <algorithm>
+#include <cmath>
+#include <cstdio>
+#include <filesystem>
+#include <fstream>
+#include <initializer_list>
+#include <iostream>
+#include <iterator>
+#include <limits>
+#include <list>
+#include <nlohmann/json.hpp>
+#include <sstream>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 #include "box/definition.h"
 #include "box/instance.h"
 #include "box/list.h"
@@ -9,26 +28,35 @@
 #include "schema/data.h"
 #include "ui/keyboard.h"
 
-#include <nlohmann/json.hpp>
-#include <raylib.h>
-#include <raymath.h>
-
-#include <algorithm>
-#include <cmath>
-#include <filesystem>
-#include <fstream>
-#include <initializer_list>
-#include <iostream>
-#include <iterator>
-#include <limits>
-#include <list>
-#include <string>
-#include <unordered_map>
-#include <vector>
-
 using namespace janowski::paczki_cpp;
 using json = nlohmann::json;
 using JCamera = janowski::paczki_cpp::Camera;
+
+#ifdef EMSCRIPTEN
+
+#include <emscripten.h>
+#include <emscripten/val.h>
+
+EM_JS(void, paczka_init, (), {
+  Paczka = {};
+  Paczka["color"] = "#ffffff";
+  newDiv = document.createElement("div");
+  newDiv.id = "kolorek";
+  newDiv.style.width = "100px";
+  newDiv.style.height = "100px";
+  document.body.insertBefore(newDiv, document.getElementById("output"));
+});
+
+EM_JS(void, update_color, (), {
+  document.getElementById("kolorek").style.backgroundColor = Paczka["color"];
+});
+
+#else
+
+void paczka_init() {}
+void update_color() {}
+
+#endif  // EMSCRIPTEN
 
 int main() {
   box::List cubes;
@@ -51,6 +79,8 @@ int main() {
   Vector3 g3 = {50.0f, 0.0f, -50.0f};
 
   SetTargetFPS(60);
+
+  paczka_init();
 
   while (!WindowShouldClose()) {
     // UpdateCamera(&camera);
@@ -128,7 +158,7 @@ int main() {
     ui::handleKeyboard(camera);
 
     BeginDrawing();
-    ClearBackground(LIGHTGRAY);
+    ClearBackground(RAYWHITE);
     BeginMode3D(camera.get());
 
     if (data && colors) {
@@ -138,8 +168,16 @@ int main() {
           graphics::drawBoxItems(*data, cube,
                                  data->box_types().at(cube.box_type_id()),
                                  color, 100u);
+          auto paczka_js = emscripten::val::global("Paczka");
+          // char color_str[16] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+          std::stringstream color_ss;
+          color_ss << "rgb(" << color.x << "," << color.y << "," << color.z
+                   << ")";
+          paczka_js.set("color", emscripten::val(color_ss.str()));
+          update_color();
         } else {
-          graphics::drawBox(*data, cube, color);
+          graphics::drawBox(*data, cube,
+                            data->box_types().at(cube.box_type_id()), color);
         }
       }
     }
