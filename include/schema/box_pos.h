@@ -19,6 +19,8 @@ class BoxPos {
   BoxPos(nlohmann::json& json);
   BoxPos(nlohmann::json& json, Data& schema);
 
+  nlohmann::json json() const;
+
   std::optional<std::reference_wrapper<const BoxType>> box_type() const;
 
   inline std::string id() const { return id_; }

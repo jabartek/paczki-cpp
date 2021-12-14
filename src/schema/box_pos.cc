@@ -4,6 +4,10 @@
 #include <optional>
 #include <string>
 
+// debug
+#include <iostream>
+//
+
 #include "schema/box_type.h"
 #include "schema/data.h"
 
@@ -36,6 +40,28 @@ std::optional<std::reference_wrapper<const BoxType>> BoxPos::box_type() const {
     return std::nullopt;
   }
   return schema_->get().box_types().at(box_type_id_);
+}
+
+nlohmann::json BoxPos::json() const {
+  nlohmann::json data;
+  data["coordinates"] = {};
+  auto& coordinates = data["coordinates"];
+  coordinates["x"] = x_;
+  coordinates["y"] = y_;
+  coordinates["z"] = z_;
+  if (!schema_) {
+    return data;
+  }
+  data["size"] = {};
+  auto& size = data["size"];
+  std::cout << &schema_ << std::endl;
+  const auto box_type = schema_->get().box_types().find(box_type_id_);
+  const auto box_types_end = schema_->get().box_types().end();
+  std::cout << (box_type == box_types_end ? "YES" : "NO!") << std::endl;
+  // size["x"] = box_type.size_x();
+  // size["y"] = box_type.size_y();
+  // size["z"] = box_type.size_z();
+  return data;
 }
 
 }  // namespace janowski::paczki_cpp::schema

@@ -11,5 +11,6 @@ cmake --build .
 Kompilacja dla przeglądarki WWW:
 ```
 emcmake cmake -S .. -B . -DPLATFORM=Web
+cmake --build .
 ```
-Wersja w WebAssembly (5.12.2021) posiada eksperymentalny binding z JS realizujący podgląd koloru ostatniej wybranej paczki w DOM strony
+Wersja w WebAssembly (14.12.2021) posiada eksperymentalny binding z React'em (repo https://github.com/jabartek/paczki-react) realizujący podgląd koloru ostatniej wybranej paczki w DOM strony

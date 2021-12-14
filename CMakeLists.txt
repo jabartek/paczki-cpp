@@ -5,10 +5,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra -Wpedantic")
 
-if (EMSCRIPTEN)
-    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -s USE_GLFW=3 -s ASSERTIONS=1 -s WASM=1 -s ASYNCIFY -s ALLOW_MEMORY_GROWTH=1")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s USE_GLFW=3 -s ASSERTIONS=1 -s WASM=1 -s ASYNCIFY -s ALLOW_MEMORY_GROWTH=1 --bind")
-    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+if (EMSCRIPTEN) #                                                                                                                              =1           
+    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}    -s ENVIRONMENT=web -s USE_GLFW=3 -s ASSERTIONS=1 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1  -s MODULARIZE=1 -s EXPORT_NAME=\"paczki_view_module\" -s EXTRA_EXPORTED_RUNTIME_METHODS=\"['specialHTMLTargets', 'JSEvents', 'GL', 'callMain', 'abort']\" -s ASYNCIFY")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -s ENVIRONMENT=web -s USE_GLFW=3 -s ASSERTIONS=1 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1  -s MODULARIZE=1 -s EXPORT_NAME=\"paczki_view_module\" -s EXTRA_EXPORTED_RUNTIME_METHODS=\"['specialHTMLTargets', 'JSEvents', 'GL', 'callMain', 'abort']\" -s ASYNCIFY --bind")
+    set(CMAKE_EXECUTABLE_SUFFIX ".js")
 endif ()
 
 include(FetchContent)
@@ -25,8 +25,8 @@ endif()
 include(FetchContent)
     FetchContent_Declare(
     raylib
-    GIT_REPOSITORY https://github.com/raysan5/raylib.git
-    GIT_TAG 206e1def6f888cbf69bdf0138f4e1a67a0377e4f
+    GIT_REPOSITORY https://github.com/jabartek/raylib.git
+    GIT_TAG c533d4da2fcfc0ade83b09b427b5b02e201caaa1
 )
 FetchContent_GetProperties(raylib)
 if (NOT raylib_POPULATED)
@@ -71,8 +71,3 @@ add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE raylib nlohmann_json::nlohmann_json)
 target_include_directories(${PROJECT_NAME} PRIVATE ${HEADER_DIR})
 target_compile_definitions(${PROJECT_NAME} PUBLIC ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/")
-
-add_executable(json_test ${JSON_TEST_SOURCES})
-
-target_link_libraries(json_test PRIVATE raylib nlohmann_json::nlohmann_json)
-target_include_directories(json_test PRIVATE ${HEADER_DIR})

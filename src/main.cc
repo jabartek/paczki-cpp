@@ -13,6 +13,7 @@
 #include <limits>
 #include <list>
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -58,7 +59,13 @@ void update_color() {}
 
 #endif  // EMSCRIPTEN
 
+struct Main {
+  std::optional<std::string> last_color;
+  bool last_color_changed = false;
+};
+
 int main() {
+  Main state;
   box::List cubes;
   std::optional<schema::Data> data;
   std::optional<schema::ColorMap> colors;
@@ -168,12 +175,19 @@ int main() {
           graphics::drawBoxItems(*data, cube,
                                  data->box_types().at(cube.box_type_id()),
                                  color, 100u);
-          auto paczka_js = emscripten::val::global("Paczka");
-          // char color_str[16] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+          auto paczka_js = emscripten::val::global("setColor");
           std::stringstream color_ss;
-          color_ss << "rgb(" << color.x << "," << color.y << "," << color.z
-                   << ")";
-          paczka_js.set("color", emscripten::val(color_ss.str()));
+          color_ss << "rgb(" << (int)color.x << "," << (int)color.y << ","
+                   << (int)color.z << ")";
+          std::cout << color_ss.str() << std::endl;
+
+          auto color_js = emscripten::val::global("setColor");
+          auto color_result = color_js(color_ss.str());
+          std::cout << cube.json() << std::endl;
+          // auto color_s = color_result.as<int>();
+          // std::cout << color_s << std::endl;
+
+          // paczka_js(color_ss.str());
           update_color();
         } else {
           graphics::drawBox(*data, cube,
@@ -246,7 +260,7 @@ int main() {
     EndDrawing();
   }
 
-  CloseWindow();
+  RLCloseWindow();
 
   return 0;
 }
