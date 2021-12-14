@@ -15,9 +15,9 @@ class Data;
 class BoxPos {
  public:
   BoxPos(std::string id, std::string box_type_id, double x, double y, double z,
-         bool rotated, Data& schema);
+         bool rotated, Data* schema);
   BoxPos(nlohmann::json& json);
-  BoxPos(nlohmann::json& json, Data& schema);
+  BoxPos(nlohmann::json& json, Data* schema);
 
   nlohmann::json json() const;
 
@@ -37,6 +37,6 @@ class BoxPos {
   double y_;
   double z_;
   bool rotated_;
-  std::optional<std::reference_wrapper<Data>> schema_;
+  Data* schema_;
 };
 }  // namespace janowski::paczki_cpp::schema

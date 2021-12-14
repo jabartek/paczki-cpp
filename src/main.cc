@@ -147,7 +147,7 @@ int main() {
       std::ifstream file(file_names.front());
       nlohmann::json json;
       file >> json;
-      data = schema::Data{json};
+      data = *(new schema::Data(json)); // debug
       cubes = box::List(loadJson(file_names.front()));
       camera.set_target(
           {(cubes.x_min() + cubes.x_max()) / 2.f * graphics::kSizeMultiplier,
@@ -175,14 +175,17 @@ int main() {
           graphics::drawBoxItems(*data, cube,
                                  data->box_types().at(cube.box_type_id()),
                                  color, 100u);
+#ifdef EMSCRIPTEN
           auto paczka_js = emscripten::val::global("setColor");
+#endif
           std::stringstream color_ss;
           color_ss << "rgb(" << (int)color.x << "," << (int)color.y << ","
                    << (int)color.z << ")";
           std::cout << color_ss.str() << std::endl;
-
+#ifdef EMSCRIPTEN
           auto color_js = emscripten::val::global("setColor");
           auto color_result = color_js(color_ss.str());
+#endif
           std::cout << cube.json() << std::endl;
           // auto color_s = color_result.as<int>();
           // std::cout << color_s << std::endl;

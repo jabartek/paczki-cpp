@@ -17,7 +17,7 @@ Data::Data(nlohmann::json &json) {
     if (!box_pos.contains("$id")) {
       continue;
     }
-    BoxPos new_box_pos{box_pos, *this};
+    BoxPos new_box_pos{box_pos, this};
     box_postitions_.emplace(new_box_pos.id(), std::move(new_box_pos));
   };
 
