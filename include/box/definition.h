@@ -1,21 +1,19 @@
 #pragma once
 
-#include <cstdint>
-
-#include "math/vector3.h"
+#include <raylib.h>
 
 namespace janowski::paczki_cpp::box {
 class Definition {
- public:
-  inline const math::Vector3<float>& size() const { return size_; }
-  inline const math::Vector3<std::uint8_t>& color() const { return color_; }
-  inline math::Vector3<float>& size() { return size_; }
-  inline math::Vector3<std::uint8_t>& color() { return color_; }
+public:
+  inline const Vector3 &size() const { return size_; }
+  inline const Color &color() const { return color_; }
+  inline Vector3 &size() { return size_; }
+  inline Color &color() { return color_; }
 
-  Definition(math::Vector3<float> size, math::Vector3<std::uint8_t> color);
+  Definition(Vector3 size, Color color);
 
- private:
-  math::Vector3<float> size_;
-  math::Vector3<std::uint8_t> color_;
+private:
+  Vector3 size_;
+  Color color_;
 };
-}  // namespace janowski::paczki_cpp::box
+} // namespace janowski::paczki_cpp::box

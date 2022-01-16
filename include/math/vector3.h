@@ -2,56 +2,41 @@
 
 #include <raylib.h>
 
-// #include <concepts> // TODO: Find out why concepts don't work on Emscripten/Clang on Linux
-#include <utility>
-
 namespace janowski::paczki_cpp::math {
-template <typename T> class Vector3 {
-public:
-  inline Vector3 &operator+=(const Vector3<T> &rhs) {
-    x += rhs.x;
-    y += rhs.y;
-    z += rhs.z;
-    return *this;
-  }
-  inline friend Vector3 operator+(Vector3<T> lhs, const Vector3<T> &rhs) {
-    lhs += rhs;
-    return lhs;
-  }
 
-  inline Vector3 &operator+=(const T &rhs) {
-    x += rhs;
-    y += rhs;
-    z += rhs;
-    return *this;
-  }
-  inline friend Vector3 operator+(Vector3<T> lhs, const T &rhs) {
-    lhs += rhs;
-    return lhs;
-  }
-
-  inline Vector3 &operator*=(const T &rhs) {
-    x *= rhs;
-    y *= rhs;
-    z *= rhs;
-    return *this;
-  }
-  inline friend Vector3 operator*(Vector3<T> lhs, const T &rhs) {
-    lhs *= rhs;
-    return lhs;
-  }
-
-  inline Vector3(T x, T y, T z)
-      : x(std::move(x)), y(std::move(y)), z(std::move(z)){};
-
-  inline explicit Vector3(T val) : x(val), y(val), z(val){};
-
-private:
-public:
-  T x, y, z;
-};
-
-inline const ::Vector3 &rayvec(const Vector3<float> &vec) {
-  return *(reinterpret_cast<const ::Vector3 *>(&vec));
+inline Vector3 operator+(Vector3 lhs, const Vector3 &rhs) {
+  lhs.x += rhs.x;
+  lhs.y += rhs.y;
+  lhs.z += rhs.z;
+  return lhs;
 }
+
+inline Vector3 operator+(Vector3 lhs, const auto &rhs) {
+  lhs.x += rhs;
+  lhs.y += rhs;
+  lhs.z += rhs;
+  return lhs;
+}
+
+inline Vector3 operator-(const Vector3 &rhs) {
+  return Vector3{-rhs.x, -rhs.y, -rhs.z};
+}
+
+inline Vector3 operator-(Vector3 lhs, const auto &rhs) { return lhs + -rhs; }
+
+inline Vector3 operator*(Vector3 lhs, const auto &rhs) {
+  lhs.x *= rhs;
+  lhs.y *= rhs;
+  lhs.z *= rhs;
+  return lhs;
+}
+
+inline Vector3 makeVector3(auto x, auto y, auto z) {
+  return Vector3{
+      .x = static_cast<float>(x),
+      .y = static_cast<float>(y),
+      .z = static_cast<float>(z),
+  };
+}
+
 } // namespace janowski::paczki_cpp::math

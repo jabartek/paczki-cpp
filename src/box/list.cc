@@ -1,6 +1,10 @@
 #include "box/list.h"
 
+#include "json_utils.h"
+#include "math/vector3.h"
+
 namespace janowski::paczki_cpp::box {
+using namespace janowski::paczki_cpp::math;
 
 void List::addDefinition(unsigned long long id, Definition definition) {
   definitions_.emplace(id, std::make_shared<Definition>(std::move(definition)));
@@ -10,18 +14,18 @@ void List::addInstance(unsigned long long defId, Instance instance) {
                           instance.rotated());
 }
 
-List::List(const nlohmann::json& data) {
+List::List(const nlohmann::json &data) {
   auto definitions = getDefinitions(data);
   auto instances = getInstances(data);
-  for (const auto& [id, definition] : definitions) {
+  for (const auto &[id, definition] : definitions) {
     addDefinition(id, std::move(definition));
   }
-  for (const auto& [defId, instance] : instances) {
+  for (const auto &[defId, instance] : instances) {
     addInstance(defId, std::move(instance));
   }
   x_min_ = y_min_ = z_min_ = std::numeric_limits<float>::max();
   x_max_ = y_max_ = z_max_ = std::numeric_limits<float>::min();
-  for (auto& box : instances_) {
+  for (auto &box : instances_) {
     auto lower = box.position();
     auto upper = box.position() + box.size();
     if (lower.x < x_min_) {
@@ -45,4 +49,4 @@ List::List(const nlohmann::json& data) {
   }
 }
 
-}  // namespace janowski::paczki_cpp::box
+} // namespace janowski::paczki_cpp::box

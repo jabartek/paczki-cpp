@@ -3,7 +3,7 @@
 #include "camera.h"
 
 namespace janowski::paczki_cpp::ui {
-void handleKeyboard(janowski::paczki_cpp::Camera& camera) {
+void handleKeyboard(janowski::paczki_cpp::Camera &camera) {
   using JCamera = janowski::paczki_cpp::Camera;
   if (IsKeyDown(KeyboardKey::KEY_W)) {
     camera.rotate(JCamera::Direction::UP, 0.05f);
@@ -24,4 +24,4 @@ void handleKeyboard(janowski::paczki_cpp::Camera& camera) {
     camera.zoom(JCamera::Zoom::OUT);
   }
 }
-}  // namespace janowski::paczki_cpp::ui
+} // namespace janowski::paczki_cpp::ui

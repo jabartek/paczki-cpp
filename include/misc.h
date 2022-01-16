@@ -1,12 +1,8 @@
 #pragma once
+#include "math/color.h"
 
-#include <cstdint>
-
-#include "math/vector3.h"
+#include <cstdlib>
 
 namespace janowski::paczki_cpp::misc {
-inline math::Vector3<std::uint8_t> generateColor() {
-  return {static_cast<std::uint8_t>(rand()), static_cast<std::uint8_t>(rand()),
-          static_cast<std::uint8_t>(rand())};
-}
-}  // namespace janowski::paczki_cpp::misc
+inline Color generateColor() { return math::makeColor(rand(), rand(), rand()); }
+} // namespace janowski::paczki_cpp::misc

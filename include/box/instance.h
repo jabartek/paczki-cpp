@@ -1,30 +1,30 @@
 #pragma once
+#include <raylib.h>
+
 #include <memory>
 
-#include "box/definition.h"
-#include "math/bounding_box.h"
-#include "math/vector3.h"
-
 namespace janowski::paczki_cpp::box {
-class Instance {
- public:
-  const math::BoundingBox<float> bounding_box() const;
-  const math::Vector3<uint8_t>& color() const;
+class Definition;
 
-  const math::Vector3<float>& position() const;
-  const math::Vector3<float> positionCenter() const;
-  const math::Vector3<float>& size() const;
-  const math::Vector3<float> sizeRotated() const;
+class Instance {
+public:
+  const BoundingBox bounding_box() const;
+  const Color &color() const;
+
+  const Vector3 &position() const;
+  const Vector3 positionCenter() const;
+  const Vector3 &size() const;
+  const Vector3 sizeRotated() const;
   bool rotated() const { return rotated_; }
 
-  Instance(std::shared_ptr<Definition> definition_ptr,
-           math::Vector3<float> position, bool rotated);
+  Instance(std::shared_ptr<Definition> definition_ptr, Vector3 position,
+           bool rotated);
 
- private:
-  math::Vector3<float> position_;
+private:
+  Vector3 position_;
   bool rotated_;
   std::weak_ptr<Definition> definition_;
 
-  static const math::Vector3<float> zero_vec_;
+  static const Vector3 zero_vec_;
 };
-}  // namespace janowski::paczki_cpp::box
+} // namespace janowski::paczki_cpp::box

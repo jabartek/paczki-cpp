@@ -1,4 +1,14 @@
 
+#include "camera.h"
+#include "graphics/box.h"
+#include "json_utils.h"
+#include "math/color.h"
+#include "math/vector3.h"
+#include "misc.h"
+#include "schema/data.h"
+#include "ui/keyboard.h"
+
+#include <nlohmann/json.hpp>
 #include <raylib.h>
 #include <raymath.h>
 
@@ -12,24 +22,14 @@
 #include <iterator>
 #include <limits>
 #include <list>
-#include <nlohmann/json.hpp>
 #include <optional>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "box/definition.h"
-#include "box/instance.h"
-#include "box/list.h"
-#include "camera.h"
-#include "graphics/box.h"
-#include "json_utils.h"
-#include "math/vector3.h"
-#include "schema/data.h"
-#include "ui/keyboard.h"
-
 using namespace janowski::paczki_cpp;
+using namespace janowski::paczki_cpp::math;
 using json = nlohmann::json;
 using JCamera = janowski::paczki_cpp::Camera;
 
@@ -37,6 +37,10 @@ using JCamera = janowski::paczki_cpp::Camera;
 
 #include <emscripten.h>
 #include <emscripten/val.h>
+
+extern "C" {
+const char *DOM_CANVAS_ID_FULL = "#paczki_view";
+}
 
 EM_JS(void, paczka_init, (), {
   Paczka = {};
@@ -57,7 +61,7 @@ EM_JS(void, update_color, (), {
 void paczka_init() {}
 void update_color() {}
 
-#endif  // EMSCRIPTEN
+#endif // EMSCRIPTEN
 
 struct Main {
   std::optional<std::string> last_color;
@@ -66,7 +70,6 @@ struct Main {
 
 int main() {
   Main state;
-  box::List cubes;
   std::optional<schema::Data> data;
   std::optional<schema::ColorMap> colors;
 
@@ -85,7 +88,7 @@ int main() {
   Vector3 g2 = {50.0f, 0.0f, 50.0f};
   Vector3 g3 = {50.0f, 0.0f, -50.0f};
 
-  SetTargetFPS(60);
+  // SetTargetFPS(60);
 
   paczka_init();
 
@@ -98,7 +101,7 @@ int main() {
     collision.hit = false;
     Color cursorColor = WHITE;
 
-    ray = GetMouseRay(GetMousePosition(), camera.get());
+    ray = GetMouseRay(GetMousePosition(), *camera);
 
     RayCollision groundHitInfo = GetRayCollisionQuad(ray, g0, g1, g2, g3);
 
@@ -108,31 +111,22 @@ int main() {
       hitObjectName = "Ground";
     }
 
-    std::optional<decltype(cubes.instances().begin())> hit_box{};
-
     if (data) {
       for (auto &[id, box_pos] : data->box_positions()) {
         auto &box_type = data->box_types().at(box_pos.box_type_id());
         RayCollision cube_hit_info = GetRayCollisionBox(
-            ray,
-            {rayvec(graphics::getPosition(box_pos) * graphics::kSizeMultiplier),
-             rayvec((graphics::getPosition(box_pos) +
-                     graphics::getSize(box_pos, box_type)) *
-                    graphics::kSizeMultiplier)});
+            ray, {(graphics::getPosition(box_pos) * graphics::kSizeMultiplier),
+                  ((graphics::getPosition(box_pos) +
+                    graphics::getSize(box_pos, box_type)) *
+                   graphics::kSizeMultiplier)});
         if (cube_hit_info.hit && cube_hit_info.distance < collision.distance) {
           collision = cube_hit_info;
           const auto &box_color =
-              colors ? colors->at(box_pos.id())
-                     : math::Vector3<unsigned char>{0u, 0u, 0u};
-          cursorColor = {box_color.x, box_color.y, box_color.z, 255u};
+              colors ? colors->at(box_pos.id()) : makeColor(0u, 0u, 0u);
+          cursorColor = makeColor(box_color.r, box_color.g, box_color.b);
           hitObjectName = box_pos.id();
-          // hit_box = box;
         }
       }
-    }
-
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && hit_box) {
-      cubes.instances().erase(*hit_box);
     }
 
     if (IsFileDropped()) {
@@ -148,17 +142,10 @@ int main() {
       nlohmann::json json;
       file >> json;
       data = *(new schema::Data(json)); // debug
-      cubes = box::List(loadJson(file_names.front()));
-      camera.set_target(
-          {(cubes.x_min() + cubes.x_max()) / 2.f * graphics::kSizeMultiplier,
-           (cubes.y_min() + cubes.y_max()) / 2.f * graphics::kSizeMultiplier,
-           (cubes.z_min() + cubes.z_max()) / 2.f * graphics::kSizeMultiplier});
       camera.updateCamera();
       colors = schema::ColorMap{};
       for (auto &[id, box_pos] : data->box_positions()) {
-        colors->emplace(id, math::Vector3<unsigned char>{
-                                (unsigned char)rand(), (unsigned char)rand(),
-                                (unsigned char)rand()});
+        colors->emplace(id, misc::generateColor());
       }
     }
 
@@ -166,7 +153,7 @@ int main() {
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
-    BeginMode3D(camera.get());
+    BeginMode3D(*camera);
 
     if (data && colors) {
       for (const auto &[id, cube] : data->box_positions()) {
@@ -174,23 +161,18 @@ int main() {
         if (id == hitObjectName) {
           graphics::drawBoxItems(*data, cube,
                                  data->box_types().at(cube.box_type_id()),
-                                 color, 100u);
-#ifdef EMSCRIPTEN
-          auto paczka_js = emscripten::val::global("setColor");
-#endif
+                                 Color{color.r, color.g, color.b, 100u});
           std::stringstream color_ss;
-          color_ss << "rgb(" << (int)color.x << "," << (int)color.y << ","
-                   << (int)color.z << ")";
+          color_ss << "rgb(" << (int)color.r << "," << (int)color.g << ","
+                   << (int)color.g << ")";
           std::cout << color_ss.str() << std::endl;
 #ifdef EMSCRIPTEN
           auto color_js = emscripten::val::global("setColor");
           auto color_result = color_js(color_ss.str());
+          auto packet_js = emscripten::val::global("setActivePacket");
+          auto packet_result = packet_js(cube.json().dump());
 #endif
           std::cout << cube.json() << std::endl;
-          // auto color_s = color_result.as<int>();
-          // std::cout << color_s << std::endl;
-
-          // paczka_js(color_ss.str());
           update_color();
         } else {
           graphics::drawBox(*data, cube,
@@ -202,12 +184,7 @@ int main() {
     if (collision.hit) {
       DrawCube(collision.point, 0.3f, 0.3f, 0.3f, cursorColor);
       DrawCubeWires(collision.point, 0.3f, 0.3f, 0.3f, RED);
-
-      Vector3 normalEnd;
-      normalEnd.x = collision.point.x + collision.normal.x;
-      normalEnd.y = collision.point.y + collision.normal.y;
-      normalEnd.z = collision.point.z + collision.normal.z;
-
+      auto normalEnd = collision.point + collision.normal;
       DrawLine3D(collision.point, normalEnd, RED);
     }
     if (!(hitObjectName == "Ground" || hitObjectName == "None")) {

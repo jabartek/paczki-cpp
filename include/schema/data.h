@@ -1,11 +1,11 @@
 #pragma once
 
-#include "math/vector3.h"
 #include "schema/box_pos.h"
 #include "schema/box_type.h"
 #include "schema/sku.h"
 
 #include <nlohmann/json.hpp>
+#include <raylib.h>
 
 #include <string>
 #include <unordered_map>
@@ -33,5 +33,5 @@ private:
   Skus skus_;
 };
 
-using ColorMap = std::unordered_map<std::string, math::Vector3<unsigned char>>;
+using ColorMap = std::unordered_map<std::string, Color>;
 } // namespace janowski::paczki_cpp::schema

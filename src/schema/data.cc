@@ -1,6 +1,7 @@
 #include "schema/data.h"
 
 #include <nlohmann/json.hpp>
+
 #include <utility>
 
 namespace janowski::paczki_cpp::schema {

@@ -1,32 +1,34 @@
 #include "box/instance.h"
 
+#include "box/definition.h"
+#include "math/vector3.h"
+
 namespace janowski::paczki_cpp::box {
+using namespace janowski::paczki_cpp::math;
 
-const math::Vector3<float> Instance::zero_vec_ = {0.f, 0.f, 0.f};
+const Vector3 Instance::zero_vec_ = {0.f, 0.f, 0.f};
 
-const math::BoundingBox<float> Instance::bounding_box() const {
-  return math::BoundingBox<float>{position_,
-                                  position_ + definition_.lock()->size()};
+const BoundingBox Instance::bounding_box() const {
+  return BoundingBox{.min = position_,
+                     .max = position_ + definition_.lock()->size()};
 }
 
-const math::Vector3<uint8_t>& Instance::color() const {
-  return definition_.lock()->color();
-}
+const Color &Instance::color() const { return definition_.lock()->color(); }
 
-const math::Vector3<float>& Instance::position() const { return position_; }
+const Vector3 &Instance::position() const { return position_; }
 
-const math::Vector3<float> Instance::positionCenter() const {
+const Vector3 Instance::positionCenter() const {
   return position_ + sizeRotated() * 0.5f;
 }
 
-const math::Vector3<float>& Instance::size() const {
+const Vector3 &Instance::size() const {
   if (definition_.expired()) {
     return zero_vec_;
   }
   return definition_.lock()->size();
 }
 
-const math::Vector3<float> Instance::sizeRotated() const {
+const Vector3 Instance::sizeRotated() const {
   auto size = this->size();
   if (rotated_) {
     std::swap(size.x, size.z);
@@ -34,8 +36,8 @@ const math::Vector3<float> Instance::sizeRotated() const {
   return size;
 }
 
-Instance::Instance(std::shared_ptr<Definition> definition_ptr,
-                   math::Vector3<float> position, bool rotated)
+Instance::Instance(std::shared_ptr<Definition> definition_ptr, Vector3 position,
+                   bool rotated)
     : position_(position), rotated_(rotated), definition_(definition_ptr) {}
 
-}  // namespace janowski::paczki_cpp::box
+} // namespace janowski::paczki_cpp::box
