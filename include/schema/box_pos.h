@@ -21,6 +21,7 @@ public:
   nlohmann::json json() const;
 
   const BoxType *box_type() const;
+  const Sku *sku() const;
 
   inline std::string id() const { return id_; }
   inline std::string box_type_id() const { return box_type_id_; }
@@ -28,6 +29,8 @@ public:
   inline double y() const { return y_; }
   inline double z() const { return z_; }
   inline bool rotated() const { return rotated_; }
+
+  inline void set_schema(Data *schema) { schema_ = schema; }
 
 private:
   std::string id_;

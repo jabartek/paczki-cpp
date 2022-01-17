@@ -2,11 +2,7 @@
 
 #include "schema/box_type.h"
 #include "schema/data.h"
-
-#include <nlohmann/json.hpp>
-
-#include <optional>
-#include <string>
+#include "schema/sku.h"
 
 namespace janowski::paczki_cpp::schema {
 
@@ -28,10 +24,20 @@ BoxPos::BoxPos(nlohmann::json &json, Data *schema) : BoxPos(json) {
 }
 
 const BoxType *BoxPos::box_type() const {
-  if (!schema_) {
-    return nullptr;
+  if (schema_) {
+    if (auto it = schema_->box_types().find(box_type_id_);
+        it != schema_->box_types().end()) {
+      return &it->second;
+    }
   }
-  return &schema_->box_types().at(box_type_id_);
+  return nullptr;
+}
+
+const Sku *BoxPos::sku() const {
+  if (auto box_type_ptr = box_type(); box_type_ptr) {
+    return box_type_ptr->sku();
+  }
+  return nullptr;
 }
 
 nlohmann::json BoxPos::json() const {

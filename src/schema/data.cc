@@ -5,7 +5,7 @@
 #include <utility>
 
 namespace janowski::paczki_cpp::schema {
-Data::Data(nlohmann::json &json) {
+Data::Data(nlohmann::json &json) : raw_(json) {
   for (auto &sku : json["SKUList"]) {
     if (!sku.contains("$id")) {
       continue;
@@ -19,7 +19,7 @@ Data::Data(nlohmann::json &json) {
       continue;
     }
     BoxPos new_box_pos{box_pos, this};
-    box_postitions_.emplace(new_box_pos.id(), std::move(new_box_pos));
+    box_positions_.emplace(new_box_pos.id(), std::move(new_box_pos));
   };
 
   for (auto &box_type : json["BoxTypes"]) {
@@ -30,4 +30,30 @@ Data::Data(nlohmann::json &json) {
     box_types_.emplace(new_box_type.id(), std::move(new_box_type));
   };
 }
+
+Data::Data(Data &&o)
+    : box_positions_(std::move(o.box_positions_)),
+      box_types_(std::move(o.box_types_)), skus_(std::move(o.skus_)),
+      raw_(std::move(o.raw_)) {
+  for (auto &[id, box_pos] : box_positions_) {
+    box_pos.set_schema(this);
+  }
+}
+
+Data &Data::operator=(Data &&rhs) {
+  box_positions_ = std::move(rhs.box_positions_);
+  box_types_ = std::move(rhs.box_types_);
+  skus_ = std::move(rhs.skus_);
+  raw_ = std::move(rhs.raw_);
+  for (auto &[id, box_pos] : box_positions_) {
+    box_pos.set_schema(this);
+  }
+  return *this;
+}
+
+Vector3 Data::dimensions() const {
+  return {raw_["SizeX"].get<float>(), raw_["SizeZ"].get<float>(),
+          raw_["SizeY"].get<float>()};
+}
+
 } // namespace janowski::paczki_cpp::schema

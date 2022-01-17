@@ -7,6 +7,9 @@
 
 namespace janowski::paczki_cpp::schema {
 
+class Data;
+class Sku;
+
 class BoxType {
 public:
   class Item {
@@ -22,9 +25,12 @@ public:
   BoxType(std::string id, std::string sku_id, double size_x, double size_y,
           double size_z, double weight, double load_capacity,
           double max_overhang, double max_overhang_x, double max_overhang_y,
-          bool fragile_top, bool uneven_bottom, std::vector<Item> items);
+          bool fragile_top, bool uneven_bottom, std::vector<Item> items,
+          Data *schema = nullptr);
 
-  BoxType(nlohmann::json &json);
+  BoxType(nlohmann::json &json, Data *schema = nullptr);
+
+  const Sku *sku() const;
 
   inline const std::string &id() const { return id_; }
   inline const std::string &sku_id() const { return sku_id_; }
@@ -55,5 +61,7 @@ private:
   bool uneven_bottom_;
 
   std::vector<Item> items_;
+
+  Data *schema_;
 };
 } // namespace janowski::paczki_cpp::schema

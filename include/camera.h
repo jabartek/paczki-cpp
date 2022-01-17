@@ -9,6 +9,7 @@
 
 namespace janowski::paczki_cpp {
 using namespace janowski::paczki_cpp::math;
+constexpr float kDefaultZoomSpeed = .975f;
 class Camera {
 public:
   Camera(::Vector3 target, float distance, float rotation_horizontal,
@@ -66,13 +67,13 @@ public:
     updateCamera();
   }
 
-  void zoom(Zoom zoom) {
+  void zoom(Zoom zoom, float multiplier = kDefaultZoomSpeed) {
     switch (zoom) {
     case Zoom::IN:
-      distance_ *= 0.975f;
+      distance_ *= multiplier;
       break;
     case Zoom::OUT:
-      distance_ /= 0.975f;
+      distance_ /= multiplier;
       break;
     default:
       break;

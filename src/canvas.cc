@@ -28,7 +28,7 @@ const char *DOM_CANVAS_ID_FULL = "#canvas_test";
 }
 
 EM_JS(char *, get_color, (), {
-  let jsString = window.color();
+  let jsString = color();
   let lengthBytes = lengthBytesUTF8(jsString) + 1;
   let stringOnWasmHeap = _malloc(lengthBytes);
   stringToUTF8(jsString, stringOnWasmHeap, lengthBytes);
@@ -36,7 +36,7 @@ EM_JS(char *, get_color, (), {
 });
 
 EM_JS(char *, get_active_packet, (), {
-  let jsString = window.activePacket();
+  let jsString = activePacket();
   let lengthBytes = lengthBytesUTF8(jsString) + 1;
   let stringOnWasmHeap = _malloc(lengthBytes);
   stringToUTF8(jsString, stringOnWasmHeap, lengthBytes);

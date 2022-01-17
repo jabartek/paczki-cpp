@@ -14,6 +14,8 @@ public:
 
   Sku(nlohmann::json &json);
 
+  nlohmann::json json() const;
+
   inline std::string id() const { return id_; }
   inline double size_x() const { return size_x_; }
   inline double size_y() const { return size_y_; }

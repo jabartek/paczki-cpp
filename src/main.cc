@@ -1,12 +1,16 @@
 
 #include "camera.h"
+#include "colors.h"
 #include "graphics/box.h"
 #include "json_utils.h"
 #include "math/color.h"
 #include "math/vector3.h"
 #include "misc.h"
+#include "pallet_viewer/state.h"
 #include "schema/data.h"
+#include "ui/cursor_3d.h"
 #include "ui/keyboard.h"
+#include "ui/rotator.h"
 
 #include <nlohmann/json.hpp>
 #include <raylib.h>
@@ -30,6 +34,7 @@
 
 using namespace janowski::paczki_cpp;
 using namespace janowski::paczki_cpp::math;
+using namespace janowski::paczki_cpp::pallet_viewer;
 using json = nlohmann::json;
 using JCamera = janowski::paczki_cpp::Camera;
 
@@ -69,9 +74,7 @@ struct Main {
 };
 
 int main() {
-  Main state;
-  std::optional<schema::Data> data;
-  std::optional<schema::ColorMap> colors;
+  State state;
 
   const int screenWidth = 800;
   const int screenHeight = 450;
@@ -79,6 +82,7 @@ int main() {
                  FLAG_MSAA_4X_HINT);
   InitWindow(screenWidth, screenHeight, "Paczki C++");
 
+  ui::Rotator rotator(makeVector2(GetScreenWidth() - 100, 100), 50);
   JCamera camera({0.f, 0.f, 0.f}, 50.f, 0.f, atanf(1), 45.f);
 
   Ray ray{};
@@ -111,7 +115,7 @@ int main() {
       hitObjectName = "Ground";
     }
 
-    if (data) {
+    if (auto &data = state.data; data) {
       for (auto &[id, box_pos] : data->box_positions()) {
         auto &box_type = data->box_types().at(box_pos.box_type_id());
         RayCollision cube_hit_info = GetRayCollisionBox(
@@ -121,8 +125,9 @@ int main() {
                    graphics::kSizeMultiplier)});
         if (cube_hit_info.hit && cube_hit_info.distance < collision.distance) {
           collision = cube_hit_info;
-          const auto &box_color =
-              colors ? colors->at(box_pos.id()) : makeColor(0u, 0u, 0u);
+          const auto &box_color = state.color_map
+                                      ? state.color_map->at(box_pos.id())
+                                      : makeColor(0u, 0u, 0u);
           cursorColor = makeColor(box_color.r, box_color.g, box_color.b);
           hitObjectName = box_pos.id();
         }
@@ -141,26 +146,39 @@ int main() {
       std::ifstream file(file_names.front());
       nlohmann::json json;
       file >> json;
-      data = *(new schema::Data(json)); // debug
+      state.data = schema::Data(json);
+      camera.set_target(state.data->dimensions() * 0.5f *
+                        graphics::kSizeMultiplier);
       camera.updateCamera();
-      colors = schema::ColorMap{};
-      for (auto &[id, box_pos] : data->box_positions()) {
-        colors->emplace(id, misc::generateColor());
+      state.color_map = schema::ColorMap{};
+      for (auto &[id, box_pos] : state.data->box_positions()) {
+        state.color_map->emplace(
+            id, colors::kColors[rand() % colors::kColors.size()]);
       }
+#ifdef EMSCRIPTEN
+      nlohmann::json sku_list;
+      for (auto &sku : state.data->skus()) {
+        sku_list[sku.first] = sku.second.json();
+      }
+      auto set_sku_list = emscripten::val::global("setSkuList");
+      auto set_sku_list_result = set_sku_list(sku_list.dump());
+#endif
     }
 
     ui::handleKeyboard(camera);
-
+    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+      rotator.handleClick(GetMousePosition(), camera);
+    }
     BeginDrawing();
     ClearBackground(RAYWHITE);
     BeginMode3D(*camera);
 
-    if (data && colors) {
-      for (const auto &[id, cube] : data->box_positions()) {
-        auto color = colors->at(cube.id());
+    if (state.data && state.color_map) {
+      for (const auto &[id, cube] : state.data->box_positions()) {
+        auto color = state.color_map->at(cube.id());
         if (id == hitObjectName) {
-          graphics::drawBoxItems(*data, cube,
-                                 data->box_types().at(cube.box_type_id()),
+          graphics::drawBoxItems(*state.data, cube,
+                                 state.data->box_types().at(cube.box_type_id()),
                                  Color{color.r, color.g, color.b, 100u});
           std::stringstream color_ss;
           color_ss << "rgb(" << (int)color.r << "," << (int)color.g << ","
@@ -175,8 +193,9 @@ int main() {
           std::cout << cube.json() << std::endl;
           update_color();
         } else {
-          graphics::drawBox(*data, cube,
-                            data->box_types().at(cube.box_type_id()), color);
+          graphics::drawBox(*state.data, cube,
+                            state.data->box_types().at(cube.box_type_id()),
+                            color);
         }
       }
     }
@@ -188,13 +207,14 @@ int main() {
       DrawLine3D(collision.point, normalEnd, RED);
     }
     if (!(hitObjectName == "Ground" || hitObjectName == "None")) {
-      graphics::drawBoxOutline(*data, data->box_positions().at(hitObjectName),
-                               colors->at(hitObjectName));
+      graphics::drawBoxOutline(*state.data,
+                               state.data->box_positions().at(hitObjectName),
+                               state.color_map->at(hitObjectName));
     }
 
     DrawRay(ray, MAROON);
 
-    DrawGrid(10, 10.0f);
+    DrawGrid(1000, 5.0f);
 
     EndMode3D();
 
@@ -206,19 +226,17 @@ int main() {
 
       if (!(hitObjectName == "Ground" || hitObjectName == "None")) {
         DrawText(
-            TextFormat(
-                "Box Type: %d",
-                std::stoi(
-                    data->box_positions().at(hitObjectName).box_type_id())),
+            TextFormat("Box Type: %d", std::stoi(state.data->box_positions()
+                                                     .at(hitObjectName)
+                                                     .box_type_id())),
             10, ypos += 15, 10, BLACK);
-        DrawText(
-            TextFormat(
-                "Items: %d",
-                data->box_types()
-                    .at(data->box_positions().at(hitObjectName).box_type_id())
-                    .items()
-                    .size()),
-            10, ypos += 15, 10, BLACK);
+        DrawText(TextFormat("Items: %d", state.data->box_types()
+                                             .at(state.data->box_positions()
+                                                     .at(hitObjectName)
+                                                     .box_type_id())
+                                             .items()
+                                             .size()),
+                 10, ypos += 15, 10, BLACK);
       }
 
       ypos += 150;
@@ -236,7 +254,7 @@ int main() {
     }
 
     DrawFPS(10, 10);
-
+    rotator.draw();
     EndDrawing();
   }
 
