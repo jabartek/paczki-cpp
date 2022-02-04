@@ -1111,4 +1111,4 @@ static std::vector<Color> kColors{
     YELLOW3_C,
     YELLOW4_C,
 };
-} // namespace janowski::paczki_cpp::colors
+}  // namespace janowski::paczki_cpp::colors

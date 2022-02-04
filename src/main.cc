@@ -1,18 +1,4 @@
 
-#include "camera.h"
-#include "colors.h"
-#include "graphics/box.h"
-#include "json_utils.h"
-#include "math/color.h"
-#include "math/vector3.h"
-#include "misc.h"
-#include "pallet_viewer/state.h"
-#include "schema/data.h"
-#include "ui/cursor_3d.h"
-#include "ui/keyboard.h"
-#include "ui/rotator.h"
-
-#include <nlohmann/json.hpp>
 #include <raylib.h>
 #include <raymath.h>
 
@@ -26,17 +12,34 @@
 #include <iterator>
 #include <limits>
 #include <list>
+#include <memory>
+#include <nlohmann/json.hpp>
 #include <optional>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
+#include "colors.h"
+#include "graphics/box.h"
+#include "json_utils.h"
+#include "math/color.h"
+#include "math/vector3.h"
+#include "misc.h"
+#include "pallet_viewer/state.h"
+#include "rendering/camera.h"
+#include "rendering/mode_3d.h"
+#include "schema/data.h"
+#include "ui/cursor_3d.h"
+#include "ui/keyboard.h"
+#include "ui/pallet_view.h"
+#include "ui/rotator.h"
+
 using namespace janowski::paczki_cpp;
 using namespace janowski::paczki_cpp::math;
 using namespace janowski::paczki_cpp::pallet_viewer;
 using json = nlohmann::json;
-using JCamera = janowski::paczki_cpp::Camera;
+using JCamera = janowski::paczki_cpp::rendering::Camera;
 
 #ifdef EMSCRIPTEN
 
@@ -44,7 +47,7 @@ using JCamera = janowski::paczki_cpp::Camera;
 #include <emscripten/val.h>
 
 extern "C" {
-const char *DOM_CANVAS_ID_FULL = "#paczki_view";
+const char* DOM_CANVAS_ID_FULL = "#paczki_view";
 }
 
 EM_JS(void, paczka_init, (), {
@@ -57,16 +60,11 @@ EM_JS(void, paczka_init, (), {
   document.body.insertBefore(newDiv, document.getElementById("output"));
 });
 
-EM_JS(void, update_color, (), {
-  document.getElementById("kolorek").style.backgroundColor = Paczka["color"];
-});
-
 #else
 
 void paczka_init() {}
-void update_color() {}
 
-#endif // EMSCRIPTEN
+#endif  // EMSCRIPTEN
 
 struct Main {
   std::optional<std::string> last_color;
@@ -74,15 +72,15 @@ struct Main {
 };
 
 int main() {
-  State state;
+  auto state = std::make_shared<State>();
+  ui::PalletView pallet_view;
 
   const int screenWidth = 800;
   const int screenHeight = 450;
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE bitor FLAG_VSYNC_HINT bitor
-                 FLAG_MSAA_4X_HINT);
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE bitor FLAG_VSYNC_HINT bitor FLAG_MSAA_4X_HINT);
   InitWindow(screenWidth, screenHeight, "Paczki C++");
 
-  ui::Rotator rotator(makeVector2(GetScreenWidth() - 100, 100), 50);
+  ui::Rotator rotator(makeVector2(GetScreenWidth() - 70, 70), 50);
   JCamera camera({0.f, 0.f, 0.f}, 50.f, 0.f, atanf(1), 45.f);
 
   Ray ray{};
@@ -115,19 +113,16 @@ int main() {
       hitObjectName = "Ground";
     }
 
-    if (auto &data = state.data; data) {
-      for (auto &[id, box_pos] : data->box_positions()) {
-        auto &box_type = data->box_types().at(box_pos.box_type_id());
+    if (auto& data = state->data; data) {
+      for (auto& [id, box_pos] : data->box_positions()) {
+        auto& box_type = data->box_types().at(box_pos.box_type_id());
         RayCollision cube_hit_info = GetRayCollisionBox(
-            ray, {(graphics::getPosition(box_pos) * graphics::kSizeMultiplier),
-                  ((graphics::getPosition(box_pos) +
-                    graphics::getSize(box_pos, box_type)) *
-                   graphics::kSizeMultiplier)});
+            ray,
+            {(graphics::getPosition(box_pos) * graphics::kSizeMultiplier),
+             ((graphics::getPosition(box_pos) + graphics::getSize(box_pos, box_type)) * graphics::kSizeMultiplier)});
         if (cube_hit_info.hit && cube_hit_info.distance < collision.distance) {
           collision = cube_hit_info;
-          const auto &box_color = state.color_map
-                                      ? state.color_map->at(box_pos.id())
-                                      : makeColor(0u, 0u, 0u);
+          const auto& box_color = state->color_map ? state->color_map->at(box_pos.id()) : makeColor(0u, 0u, 0u);
           cursorColor = makeColor(box_color.r, box_color.g, box_color.b);
           hitObjectName = box_pos.id();
         }
@@ -146,94 +141,98 @@ int main() {
       std::ifstream file(file_names.front());
       nlohmann::json json;
       file >> json;
-      state.data = schema::Data(json);
-      camera.set_target(state.data->dimensions() * 0.5f *
-                        graphics::kSizeMultiplier);
+      state->data = std::make_shared<schema::Data>(json);
+      pallet_view.set_data(state->data, state);
+      camera.set_target(state->data->dimensions() * 0.5f * graphics::kSizeMultiplier);
       camera.updateCamera();
-      state.color_map = schema::ColorMap{};
-      for (auto &[id, box_pos] : state.data->box_positions()) {
-        state.color_map->emplace(
-            id, colors::kColors[rand() % colors::kColors.size()]);
+      state->color_map = schema::Data::ColorMap{};
+      for (auto& [id, box_pos] : state->data->box_positions()) {
+        state->color_map->emplace(id, colors::kColors[rand() % colors::kColors.size()]);
       }
 #ifdef EMSCRIPTEN
       nlohmann::json sku_list;
-      for (auto &sku : state.data->skus()) {
+      for (auto& sku : state->data->skus()) {
         sku_list[sku.first] = sku.second.json();
       }
       auto set_sku_list = emscripten::val::global("setSkuList");
       auto set_sku_list_result = set_sku_list(sku_list.dump());
+
+      nlohmann::json box_type_list;
+      for (auto& box_type : state->data->box_types()) {
+        box_type_list[box_type.first] = box_type.second.json();
+      }
+      auto set_box_type_list = emscripten::val::global("setBoxTypeList");
+      auto set_box_type_list_result = set_box_type_list(box_type_list.dump());
 #endif
+      const auto setSelectedBoxType = false;  // debug
+      if (setSelectedBoxType) {
+        auto random_it = std::next(std::begin(state->data->box_positions()), rand() % state->data->box_types().size());
+        state->selectedBoxType = random_it->second.box_type_id();
+      }
     }
 
     ui::handleKeyboard(camera);
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
       rotator.handleClick(GetMousePosition(), camera);
     }
+    if (!IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+    }
     BeginDrawing();
     ClearBackground(RAYWHITE);
-    BeginMode3D(*camera);
+    {
+      rendering::Mode3D frame(&camera);
 
-    if (state.data && state.color_map) {
-      for (const auto &[id, cube] : state.data->box_positions()) {
-        auto color = state.color_map->at(cube.id());
-        if (id == hitObjectName) {
-          graphics::drawBoxItems(*state.data, cube,
-                                 state.data->box_types().at(cube.box_type_id()),
-                                 Color{color.r, color.g, color.b, 100u});
-          std::stringstream color_ss;
-          color_ss << "rgb(" << (int)color.r << "," << (int)color.g << ","
-                   << (int)color.g << ")";
-          std::cout << color_ss.str() << std::endl;
-#ifdef EMSCRIPTEN
-          auto color_js = emscripten::val::global("setColor");
-          auto color_result = color_js(color_ss.str());
-          auto packet_js = emscripten::val::global("setActivePacket");
-          auto packet_result = packet_js(cube.json().dump());
-#endif
-          std::cout << cube.json() << std::endl;
-          update_color();
-        } else {
-          graphics::drawBox(*state.data, cube,
-                            state.data->box_types().at(cube.box_type_id()),
-                            color);
-        }
+      //       if (state->data && state->color_map) {
+      //         for (const auto& [id, cube] : state->data->box_positions()) {
+      //           auto color = state->color_map->at(cube.id());
+      //           if (id == hitObjectName) {
+      //             graphics::drawBoxItems(*state->data, cube, state->data->box_types().at(cube.box_type_id()),
+      //                                    Color{color.r, color.g, color.b, 100u});
+      //             std::stringstream color_ss;
+      //             color_ss << "rgb(" << (int)color.r << "," << (int)color.g << "," << (int)color.g << ")";
+      //             std::cout << color_ss.str() << std::endl;
+      // #ifdef EMSCRIPTEN
+      //             auto color_js = emscripten::val::global("setColor");
+      //             auto color_result = color_js(color_ss.str());
+      //             auto packet_js = emscripten::val::global("setActivePacket");
+      //             auto packet_result = packet_js(cube.json().dump());
+      // #endif
+      //             std::cout << cube.json() << std::endl;
+      //             update_color();
+      //           } else {
+      //             graphics::drawBox(*state->data, cube, state->data->box_types().at(cube.box_type_id()), color);
+      //           }
+      //         }
+      //       }
+
+      pallet_view.draw(frame);
+
+      if (collision.hit) {
+        DrawCube(collision.point, 0.3f, 0.3f, 0.3f, cursorColor);
+        DrawCubeWires(collision.point, 0.3f, 0.3f, 0.3f, RED);
+        auto normalEnd = collision.point + collision.normal;
+        DrawLine3D(collision.point, normalEnd, RED);
       }
+      if (!(hitObjectName == "Ground" || hitObjectName == "None")) {
+        graphics::drawBoxOutline(*state->data, state->data->box_positions().at(hitObjectName),
+                                 state->color_map->at(hitObjectName));
+      }
+
+      DrawRay(ray, MAROON);
+
+      DrawGrid(1000, 5.0f);
     }
 
-    if (collision.hit) {
-      DrawCube(collision.point, 0.3f, 0.3f, 0.3f, cursorColor);
-      DrawCubeWires(collision.point, 0.3f, 0.3f, 0.3f, RED);
-      auto normalEnd = collision.point + collision.normal;
-      DrawLine3D(collision.point, normalEnd, RED);
-    }
-    if (!(hitObjectName == "Ground" || hitObjectName == "None")) {
-      graphics::drawBoxOutline(*state.data,
-                               state.data->box_positions().at(hitObjectName),
-                               state.color_map->at(hitObjectName));
-    }
-
-    DrawRay(ray, MAROON);
-
-    DrawGrid(1000, 5.0f);
-
-    EndMode3D();
-
-    DrawText(TextFormat("Hit Object: %s", hitObjectName.c_str()), 10, 50, 10,
-             BLACK);
+    // DrawText(TextFormat("Hit Object: %s", hitObjectName.c_str()), 10, 50, 10, BLACK);
 
     if (collision.hit) {
       int ypos = 50;
 
       if (!(hitObjectName == "Ground" || hitObjectName == "None")) {
-        DrawText(
-            TextFormat("Box Type: %d", std::stoi(state.data->box_positions()
-                                                     .at(hitObjectName)
-                                                     .box_type_id())),
-            10, ypos += 15, 10, BLACK);
-        DrawText(TextFormat("Items: %d", state.data->box_types()
-                                             .at(state.data->box_positions()
-                                                     .at(hitObjectName)
-                                                     .box_type_id())
+        DrawText(TextFormat("Box Type: %d", std::stoi(state->data->box_positions().at(hitObjectName).box_type_id())),
+                 10, ypos += 15, 10, BLACK);
+        DrawText(TextFormat("Items: %d", state->data->box_types()
+                                             .at(state->data->box_positions().at(hitObjectName).box_type_id())
                                              .items()
                                              .size()),
                  10, ypos += 15, 10, BLACK);
@@ -241,19 +240,16 @@ int main() {
 
       ypos += 150;
 
-      DrawText(TextFormat("Distance: %3.2f", collision.distance), 10, ypos, 10,
-               BLACK);
+      DrawText(TextFormat("Distance: %3.2f", collision.distance), 10, ypos, 10, BLACK);
 
-      DrawText(TextFormat("Hit Pos: %3.2f %3.2f %3.2f", collision.point.x,
-                          collision.point.y, collision.point.z),
-               10, ypos + 15, 10, BLACK);
+      DrawText(TextFormat("Hit Pos: %3.2f %3.2f %3.2f", collision.point.x, collision.point.y, collision.point.z), 10,
+               ypos + 15, 10, BLACK);
 
-      DrawText(TextFormat("Hit Norm: %3.2f %3.2f %3.2f", collision.normal.x,
-                          collision.normal.y, collision.normal.z),
+      DrawText(TextFormat("Hit Norm: %3.2f %3.2f %3.2f", collision.normal.x, collision.normal.y, collision.normal.z),
                10, ypos + 30, 10, BLACK);
     }
 
-    DrawFPS(10, 10);
+    // DrawFPS(10, 10);
     rotator.draw();
     EndDrawing();
   }

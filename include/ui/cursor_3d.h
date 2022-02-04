@@ -2,7 +2,7 @@
 
 namespace janowski::paczki_cpp::ui {
 class Cursor3D {
-public:
-private:
+ public:
+ private:
 };
-} // namespace janowski::paczki_cpp::ui
+}  // namespace janowski::paczki_cpp::ui

@@ -1,2 +1,7 @@
+---
+Language: Cpp
 BasedOnStyle: Google
-IncludeBlocksStyle: Preserve
+DerivePointerAlignment: false
+PointerAlignment: Left
+BreakConstructorInitializers : BeforeColon
+ColumnLimit: 120

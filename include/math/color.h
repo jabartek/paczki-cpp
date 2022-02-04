@@ -13,8 +13,6 @@ inline Color makeColor(auto r, auto g, auto b, auto a = 255u) {
   };
 }
 
-inline Color makeColor(auto r, auto g, auto b) {
-  return makeColor(r, g, b, 255u);
-}
+inline Color makeColor(auto r, auto g, auto b) { return makeColor(r, g, b, 255u); }
 
-} // namespace janowski::paczki_cpp::math
+}  // namespace janowski::paczki_cpp::math

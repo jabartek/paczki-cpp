@@ -1,22 +1,23 @@
-#include "camera.h"
-#include "math/vector2.h"
-#include "math/vector3.h"
-#include "raymath.h"
-#include "schema/box_pos.h"
-#include "ui/keyboard.h"
+#include <raylib.h>
 
 #include <cmath>
 #include <cstdlib>
 #include <exception>
 #include <iostream>
 #include <limits>
+#include <nlohmann/json.hpp>
 #include <string>
 
-#include <nlohmann/json.hpp>
-#include <raylib.h>
+#include "math/vector2.h"
+#include "math/vector3.h"
+#include "raymath.h"
+#include "rendering/camera.h"
+#include "schema/box_pos.h"
+#include "ui/keyboard.h"
+#include "ui/rotator.h"
 
 using json = nlohmann::json;
-using JCamera = janowski::paczki_cpp::Camera;
+using JCamera = janowski::paczki_cpp::rendering::Camera;
 
 #ifdef EMSCRIPTEN
 
@@ -24,10 +25,10 @@ using JCamera = janowski::paczki_cpp::Camera;
 #include <emscripten/val.h>
 
 extern "C" {
-const char *DOM_CANVAS_ID_FULL = "#canvas_test";
+const char* DOM_CANVAS_ID_FULL = "#canvas_test";
 }
 
-EM_JS(char *, get_color, (), {
+EM_JS(char*, get_color, (), {
   let jsString = color();
   let lengthBytes = lengthBytesUTF8(jsString) + 1;
   let stringOnWasmHeap = _malloc(lengthBytes);
@@ -35,7 +36,7 @@ EM_JS(char *, get_color, (), {
   return stringOnWasmHeap;
 });
 
-EM_JS(char *, get_active_packet, (), {
+EM_JS(char*, get_active_packet, (), {
   let jsString = activePacket();
   let lengthBytes = lengthBytesUTF8(jsString) + 1;
   let stringOnWasmHeap = _malloc(lengthBytes);
@@ -45,23 +46,24 @@ EM_JS(char *, get_active_packet, (), {
 
 #else
 
-char *get_color() {
-  auto color = reinterpret_cast<char *>(calloc(1, 1));
+char* get_color() {
+  auto color = reinterpret_cast<char*>(calloc(1, 1));
   return color;
 }
 
-char *get_active_packet() {
-  auto color = reinterpret_cast<char *>(calloc(1, 1));
+char* get_active_packet() {
+  auto color = reinterpret_cast<char*>(calloc(1, 1));
   return color;
 }
 
 #endif
 
 using namespace janowski::paczki_cpp;
+using namespace janowski::paczki_cpp::math;
 namespace janowski::paczki_cpp::canvas {
 
 class Cube {
-public:
+ public:
   ::BoundingBox bounding_box() const {
     return {
         .min = position,
@@ -69,22 +71,19 @@ public:
     };
   }
 
-  void draw() const {
-    DrawCube(position + size * 0.5f, size.x, size.y, size.z, color);
-  }
+  void draw() const { DrawCube(position + size * 0.5f, size.x, size.y, size.z, color); }
 
   ::Vector3 position;
   ::Vector3 size;
   ::Color color;
 };
-} // namespace janowski::paczki_cpp::canvas
+}  // namespace janowski::paczki_cpp::canvas
 
 int main() {
   std::optional<schema::BoxPos> box_opt;
   const int screenWidth = 800;
   const int screenHeight = 450;
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE bitor FLAG_VSYNC_HINT bitor
-                 FLAG_MSAA_4X_HINT);
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE bitor FLAG_VSYNC_HINT bitor FLAG_MSAA_4X_HINT);
   InitWindow(screenWidth, screenHeight, "Canvas Test");
   std::string last_box{"{}"};
   // Camera3D camera;
@@ -99,11 +98,16 @@ int main() {
 
   ::Vector3 cursor_pos{0.f, 0.f, 0.f};
 
+  ui::Rotator rotator(makeVector2(GetScreenWidth() - 70, 70), 50);
+
   bool is_cursor_dragged{false};
   enum class LastCube { X, Y, Z, None = -1 };
   LastCube last_cube = LastCube::None;
   while (!WindowShouldClose()) {
     ui::handleKeyboard(camera);
+    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+      rotator.handleClick(GetMousePosition(), camera);
+    }
     BeginDrawing();
     ClearBackground(RAYWHITE);
     auto text = get_active_packet();
@@ -116,9 +120,8 @@ int main() {
       auto coordinates = packet_json["coordinates"];
       auto size = packet_json["size"];
       if (!coordinates.empty() && !size.empty()) {
-        DrawRectangle(
-            coordinates["x"].get<int>() / 10, coordinates["y"].get<int>() / 10,
-            size["x"].get<int>() / 10, size["y"].get<int>() / 10, RED);
+        DrawRectangle(coordinates["x"].get<int>() / 10, coordinates["y"].get<int>() / 10, size["x"].get<int>() / 10,
+                      size["y"].get<int>() / 10, RED);
       }
     }
     free(text);
@@ -153,9 +156,8 @@ int main() {
     cube_zero.draw();
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
       auto ray = GetMouseRay(GetMousePosition(), *camera);
-      Cube *hit_cube = nullptr;
-      RayCollision collision =
-          GetRayCollisionBox(ray, cube_zero.bounding_box());
+      Cube* hit_cube = nullptr;
+      RayCollision collision = GetRayCollisionBox(ray, cube_zero.bounding_box());
       if (!collision.hit) {
         collision.distance = std::numeric_limits<float>::max();
       }
@@ -194,23 +196,22 @@ int main() {
       }
       if (is_cursor_dragged) {
         switch (last_cube) {
-        case LastCube::X:
-          hit_cube = &cube_x;
-          break;
-        case LastCube::Y:
-          hit_cube = &cube_y;
-          break;
-        case LastCube::Z:
-          hit_cube = &cube_z;
-          break;
-        default:
-          break;
+          case LastCube::X:
+            hit_cube = &cube_x;
+            break;
+          case LastCube::Y:
+            hit_cube = &cube_y;
+            break;
+          case LastCube::Z:
+            hit_cube = &cube_z;
+            break;
+          default:
+            break;
         }
       }
       if (is_cursor_dragged) {
         auto delta = GetMouseDelta();
-        auto ray_before =
-            GetMouseRay(GetMousePosition() + delta * -1.f, *camera);
+        auto ray_before = GetMouseRay(GetMousePosition() + delta * -1.f, *camera);
         auto pos = ::Vector3{0.f, 0.f, 0.f};
         ::Vector3 p1 = pos + ::Vector3{-1000.f, -1000.f, 0.f};
         ::Vector3 p2 = pos + ::Vector3{-1000.f, 1000.f, 0.f};
@@ -220,17 +221,12 @@ int main() {
         ::Vector3 p2z = pos + ::Vector3{-1000.f, 0.f, 1000.f};
         ::Vector3 p3z = pos + ::Vector3{1000.f, 0.f, 1000.f};
         ::Vector3 p4z = pos + ::Vector3{1000.f, 0.f, -1000.f};
-        auto col = GetRayCollisionQuad(ray, cursor_pos + p1, cursor_pos + p2,
-                                       cursor_pos + p3, cursor_pos + p4);
+        auto col = GetRayCollisionQuad(ray, cursor_pos + p1, cursor_pos + p2, cursor_pos + p3, cursor_pos + p4);
         auto col_before =
-            GetRayCollisionQuad(ray_before, cursor_pos + p1, cursor_pos + p2,
-                                cursor_pos + p3, cursor_pos + p4);
-        auto col_z =
-            GetRayCollisionQuad(ray, cursor_pos + p1z, cursor_pos + p2z,
-                                cursor_pos + p3z, cursor_pos + p4z);
+            GetRayCollisionQuad(ray_before, cursor_pos + p1, cursor_pos + p2, cursor_pos + p3, cursor_pos + p4);
+        auto col_z = GetRayCollisionQuad(ray, cursor_pos + p1z, cursor_pos + p2z, cursor_pos + p3z, cursor_pos + p4z);
         auto col_before_z =
-            GetRayCollisionQuad(ray_before, cursor_pos + p1z, cursor_pos + p2z,
-                                cursor_pos + p3z, cursor_pos + p4z);
+            GetRayCollisionQuad(ray_before, cursor_pos + p1z, cursor_pos + p2z, cursor_pos + p3z, cursor_pos + p4z);
         if (hit_cube == &cube_x) {
           last_cube = LastCube::X;
           cursor_pos = cursor_pos + ::Vector3{
@@ -252,8 +248,7 @@ int main() {
                                         0.f,
                                         col_z.point.z - col_before_z.point.z,
                                     };
-          std::cout << "Col Z point:\t" << col_z.point.x << "\t"
-                    << col_z.point.y << "\t" << col_z.point.z << "\t\n";
+          std::cout << "Col Z point:\t" << col_z.point.x << "\t" << col_z.point.y << "\t" << col_z.point.z << "\t\n";
         }
       }
     } else {
@@ -261,6 +256,7 @@ int main() {
       is_cursor_dragged = false;
     }
     EndMode3D();
+    rotator.draw();
     EndDrawing();
   }
   RLCloseWindow();

@@ -1,23 +1,25 @@
 #pragma once
 
-#include "math/vector3.h"
-
 #include <raylib.h>
 #include <raymath.h>
 
 #include <memory>
 
-namespace janowski::paczki_cpp {
+#include "math/vector3.h"
+
+namespace janowski::paczki_cpp::rendering {
 using namespace janowski::paczki_cpp::math;
 constexpr float kDefaultZoomSpeed = .975f;
 class Camera {
-public:
-  Camera(::Vector3 target, float distance, float rotation_horizontal,
-         float rotation_vertical, float fov)
-      : camera_ptr_(std::make_shared<::Camera>()), target_(target),
-        distance_(distance), rotation_horizontal_(rotation_horizontal),
-        rotation_vertical_(rotation_vertical), fov_(fov) {
-    auto &camera = *camera_ptr_;
+ public:
+  Camera(::Vector3 target, float distance, float rotation_horizontal, float rotation_vertical, float fov)
+      : camera_ptr_(std::make_shared<::Camera>()),
+        target_(target),
+        distance_(distance),
+        rotation_horizontal_(rotation_horizontal),
+        rotation_vertical_(rotation_vertical),
+        fov_(fov) {
+    auto& camera = *camera_ptr_;
     camera.up = {0.f, 1.f, 0.f};
     camera.fovy = fov_;
     camera.projection = ::CameraProjection::CAMERA_PERSPECTIVE;
@@ -37,7 +39,7 @@ public:
     const auto dist_z = cos_horizontal * dist_horizontal;
     const Vector3 camera_offset{dist_x, dist_y, dist_z};
 
-    auto &camera = *camera_ptr_;
+    auto& camera = *camera_ptr_;
 
     camera.position = target_ + camera_offset;
     camera.target = target_;
@@ -48,35 +50,35 @@ public:
 
   void rotate(Direction direction, float angle) {
     switch (direction) {
-    case Direction::UP:
-      rotation_vertical_ += angle;
-      break;
-    case Direction::DOWN:
-      rotation_vertical_ -= angle;
-      break;
-    case Direction::LEFT:
-      rotation_horizontal_ -= angle;
-      break;
-    case Direction::RIGHT:
-      rotation_horizontal_ += angle;
-      break;
-    default:
-      rotation_horizontal_ = 0.f;
-      rotation_vertical_ = 0.f;
+      case Direction::UP:
+        rotation_vertical_ += angle;
+        break;
+      case Direction::DOWN:
+        rotation_vertical_ -= angle;
+        break;
+      case Direction::LEFT:
+        rotation_horizontal_ -= angle;
+        break;
+      case Direction::RIGHT:
+        rotation_horizontal_ += angle;
+        break;
+      default:
+        rotation_horizontal_ = 0.f;
+        rotation_vertical_ = 0.f;
     }
     updateCamera();
   }
 
   void zoom(Zoom zoom, float multiplier = kDefaultZoomSpeed) {
     switch (zoom) {
-    case Zoom::IN:
-      distance_ *= multiplier;
-      break;
-    case Zoom::OUT:
-      distance_ /= multiplier;
-      break;
-    default:
-      break;
+      case Zoom::IN:
+        distance_ *= multiplier;
+        break;
+      case Zoom::OUT:
+        distance_ /= multiplier;
+        break;
+      default:
+        break;
     }
     updateCamera();
   }
@@ -87,7 +89,7 @@ public:
 
   inline void set_target(::Vector3 target) { target_ = std::move(target); }
 
-private:
+ private:
   std::shared_ptr<::Camera> camera_ptr_;
   ::Vector3 target_;
   float distance_;
@@ -95,4 +97,4 @@ private:
   float rotation_vertical_;
   float fov_;
 };
-} // namespace janowski::paczki_cpp
+}  // namespace janowski::paczki_cpp::rendering

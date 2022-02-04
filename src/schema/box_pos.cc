@@ -6,12 +6,16 @@
 
 namespace janowski::paczki_cpp::schema {
 
-BoxPos::BoxPos(std::string id, std::string box_type_id, double x, double y,
-               double z, bool rotated, Data *schema)
-    : id_(std::move(id)), box_type_id_(std::move(box_type_id)), x_(x), y_(y),
-      z_(z), rotated_(rotated), schema_(schema) {}
+BoxPos::BoxPos(std::string id, std::string box_type_id, double x, double y, double z, bool rotated, Data* schema)
+    : id_(std::move(id)),
+      box_type_id_(std::move(box_type_id)),
+      x_(x),
+      y_(y),
+      z_(z),
+      rotated_(rotated),
+      schema_(schema) {}
 
-BoxPos::BoxPos(nlohmann::json &json)
+BoxPos::BoxPos(nlohmann::json& json)
     : id_{json["$id"].get<std::string>()},
       box_type_id_{json["Item1"]["$ref"].get<std::string>()},
       x_{json["Item2"]["X"].get<double>()},
@@ -19,21 +23,18 @@ BoxPos::BoxPos(nlohmann::json &json)
       z_{json["Item2"]["Z"].get<double>()},
       rotated_{json["Item2"]["Rotated"].get<bool>()} {}
 
-BoxPos::BoxPos(nlohmann::json &json, Data *schema) : BoxPos(json) {
-  schema_ = schema;
-}
+BoxPos::BoxPos(nlohmann::json& json, Data* schema) : BoxPos(json) { schema_ = schema; }
 
-const BoxType *BoxPos::box_type() const {
+const BoxType* BoxPos::box_type() const {
   if (schema_) {
-    if (auto it = schema_->box_types().find(box_type_id_);
-        it != schema_->box_types().end()) {
+    if (auto it = schema_->box_types().find(box_type_id_); it != schema_->box_types().end()) {
       return &it->second;
     }
   }
   return nullptr;
 }
 
-const Sku *BoxPos::sku() const {
+const Sku* BoxPos::sku() const {
   if (auto box_type_ptr = box_type(); box_type_ptr) {
     return box_type_ptr->sku();
   }
@@ -43,7 +44,7 @@ const Sku *BoxPos::sku() const {
 nlohmann::json BoxPos::json() const {
   nlohmann::json data;
   data["coordinates"] = {};
-  auto &coordinates = data["coordinates"];
+  auto& coordinates = data["coordinates"];
   coordinates["x"] = x_;
   coordinates["y"] = y_;
   coordinates["z"] = z_;
@@ -51,7 +52,7 @@ nlohmann::json BoxPos::json() const {
     return data;
   }
   data["size"] = {};
-  auto &size = data["size"];
+  auto& size = data["size"];
   const auto box_type = schema_->box_types().find(box_type_id_);
   if (box_type != schema_->box_types().end()) {
     size["x"] = box_type->second.size_x();
@@ -61,4 +62,4 @@ nlohmann::json BoxPos::json() const {
   return data;
 }
 
-} // namespace janowski::paczki_cpp::schema
+}  // namespace janowski::paczki_cpp::schema

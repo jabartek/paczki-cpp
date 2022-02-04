@@ -1,8 +1,8 @@
 #pragma once
-#include "math/color.h"
-
 #include <cstdlib>
+
+#include "math/color.h"
 
 namespace janowski::paczki_cpp::misc {
 inline Color generateColor() { return math::makeColor(rand(), rand(), rand()); }
-} // namespace janowski::paczki_cpp::misc
+}  // namespace janowski::paczki_cpp::misc

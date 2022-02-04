@@ -49,13 +49,16 @@ set(PROJECT_SOURCES
 
     ${SOURCE_DIR}/pallet_viewer/state.cc
 
+    ${SOURCE_DIR}/rendering/mode_3d.cc
+
     ${SOURCE_DIR}/schema/data.cc
     ${SOURCE_DIR}/schema/box_type.cc
     ${SOURCE_DIR}/schema/box_pos.cc
     ${SOURCE_DIR}/schema/sku.cc
 
-    ${SOURCE_DIR}/ui/rotator.cc
     ${SOURCE_DIR}/ui/cursor_3d.cc
+    ${SOURCE_DIR}/ui/pallet_view.cc
+    ${SOURCE_DIR}/ui/rotator.cc
 )
 
 
