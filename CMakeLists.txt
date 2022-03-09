@@ -75,6 +75,7 @@ set(PROJECT_SOURCES
     ${SOURCE_DIR}/schema/sku.cc
 
     ${SOURCE_DIR}/ui/cursor_3d.cc
+    ${SOURCE_DIR}/ui/handlers.cc
     ${SOURCE_DIR}/ui/pallet_view.cc
     ${SOURCE_DIR}/ui/rotator.cc
 
