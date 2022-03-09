@@ -1,7 +1,6 @@
 #pragma once
 
-#include <raylib.h>
-#include <raymath.h>
+#include "lib/raylib_clean.h"
 
 #include <memory>
 

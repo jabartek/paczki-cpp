@@ -1,6 +1,6 @@
 #include "ui/pallet_view.h"
 
-#include <raylib.h>
+#include "lib/raylib_clean.h"
 
 #include <memory>
 #include <sstream>

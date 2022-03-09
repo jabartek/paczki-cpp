@@ -16,6 +16,9 @@ class State {
   std::optional<std::string> selectedBoxType;
   std::optional<std::string> hoverBoxPos;
 
+  int window_width{};
+  int window_height{};
+
   void update();
 };
 }  // namespace janowski::paczki_cpp::pallet_viewer

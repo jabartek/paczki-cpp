@@ -1,4 +1,4 @@
-#include <raylib.h>
+#include "lib/raylib_clean.h"
 
 #include <cmath>
 #include <cstdlib>
@@ -47,13 +47,11 @@ EM_JS(char*, get_active_packet, (), {
 #else
 
 char* get_color() {
-  auto color = reinterpret_cast<char*>(calloc(1, 1));
-  return color;
+  return nullptr;
 }
 
 char* get_active_packet() {
-  auto color = reinterpret_cast<char*>(calloc(1, 1));
-  return color;
+  return nullptr;
 }
 
 #endif

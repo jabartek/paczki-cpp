@@ -1,6 +1,6 @@
 #include "graphics/box.h"
 
-#include <raylib.h>
+#include "lib/raylib_clean.h"
 
 #include "math/color.h"
 #include "math/vector3.h"
