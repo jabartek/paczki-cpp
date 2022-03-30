@@ -84,12 +84,20 @@ set(PROJECT_SOURCES
 
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 
+if (EMSCRIPTEN)
 target_link_libraries(${PROJECT_NAME} PRIVATE raylib nlohmann_json::nlohmann_json lodepng embind)
+else()
+target_link_libraries(${PROJECT_NAME} PRIVATE raylib nlohmann_json::nlohmann_json lodepng)
+endif()
 target_include_directories(${PROJECT_NAME} PRIVATE 
     ${HEADER_DIR} 
 )
-target_link_options(${PROJECT_NAME} PRIVATE -sEXPORT_NAME="paczki_view_module" -sENVIRONMENT=web -sUSE_GLFW=3 -sASSERTIONS=1 -sWASM=1 -sALLOW_MEMORY_GROWTH=1  -sMODULARIZE=1 -sEXPORTED_RUNTIME_METHODS=['specialHTMLTargets','JSEvents','GL','callMain','abort'] -sASYNCIFY)
 
+if (EMSCRIPTEN)
+target_link_options(${PROJECT_NAME} PRIVATE -sEXPORT_NAME="paczki_view_module" -sENVIRONMENT=web -sUSE_GLFW=3 -sASSERTIONS=1 -sWASM=1 -sALLOW_MEMORY_GROWTH=1  -sMODULARIZE=1 -sEXPORTED_RUNTIME_METHODS=['specialHTMLTargets','JSEvents','GL','callMain','abort'] -sASYNCIFY -sNO_DISABLE_EXCEPTION_CATCHING)
+else()
+
+endif()
 
 # add_executable(canvas_test ${SOURCE_DIR}/canvas.cc)
 # target_link_libraries(canvas_test PRIVATE raylib nlohmann_json::nlohmann_json embind)

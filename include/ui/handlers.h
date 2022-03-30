@@ -23,7 +23,7 @@ class HandlerStore {
  public:
   HandlerStore(std::shared_ptr<pallet_viewer::State> state);
   void doRegister(Handler handler);
-  void handle();
+  void handleAll();
 
  private:
   std::shared_ptr<pallet_viewer::State> state_;

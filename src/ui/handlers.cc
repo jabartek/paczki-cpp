@@ -1,7 +1,6 @@
 #include "ui/handlers.h"
 
 #include <bind/bind.h>
-#include <emscripten/val.h>
 #include <raylib.h>
 
 #include <fstream>
@@ -12,6 +11,10 @@
 #include "colors.h"
 #include "graphics/box.h"
 #include "pallet_viewer/state.h"
+
+#ifdef EMSCRIPTEN
+#include <emscripten/val.h>
+#endif
 
 using namespace janowski::paczki_cpp::math;
 
@@ -26,9 +29,9 @@ HandlerStore::HandlerStore(std::shared_ptr<pallet_viewer::State> state) {
 void HandlerStore::doRegister(Handler handler) {
   handlers_.emplace_back(std::move(handler));
 }
-void HandlerStore::handle() {
-  for (auto& handler : handlers_) {
-    if (handler.pred(state_)) handler.func(state_);
+void HandlerStore::handleAll() {
+  for (auto& [pred, func] : handlers_) {
+    if (pred(state_)) func(state_);
   }
 }
 
@@ -69,6 +72,9 @@ void DropHandler::func(std::shared_ptr<pallet_viewer::State> state_ptr) {
   }
 
   bind::call("setSkuList", sku_list);
+  
+  auto palletIdList = nlohmann::json(state_ptr->data->pallets());
+  bind::call("setPalletIdList", palletIdList);
 
   nlohmann::json box_type_list;
   for (auto& box_type : state_ptr->data->box_types()) {
@@ -85,7 +91,8 @@ void DropHandler::func(std::shared_ptr<pallet_viewer::State> state_ptr) {
   }
 }
 
-bool KeyboardHandler::pred(std::shared_ptr<pallet_viewer::State> /*state_ptr*/) {
+bool KeyboardHandler::pred(
+    std::shared_ptr<pallet_viewer::State> /*state_ptr*/) {
   return true;
 }
 void KeyboardHandler::func(std::shared_ptr<pallet_viewer::State> state_ptr) {

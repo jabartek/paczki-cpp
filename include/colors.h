@@ -1,8 +1,8 @@
 #pragma once
 
-#include "lib/raylib_clean.h"
+#include <array>
 
-#include <vector>
+#include "lib/raylib_clean.h"
 
 namespace janowski::paczki_cpp::colors {
 
@@ -558,7 +558,7 @@ constexpr Color YELLOW2_C = Color{238u, 238u, 0u, 255u};
 constexpr Color YELLOW3_C = Color{205u, 205u, 0u, 255u};
 constexpr Color YELLOW4_C = Color{139u, 139u, 0u, 255u};
 
-static std::vector<Color> kColors{
+static constexpr std::array<Color, 551> kColors{
     ALICEBLUE_C,
     ANTIQUEWHITE_C,
     ANTIQUEWHITE1_C,
@@ -1111,4 +1111,5 @@ static std::vector<Color> kColors{
     YELLOW3_C,
     YELLOW4_C,
 };
+
 }  // namespace janowski::paczki_cpp::colors

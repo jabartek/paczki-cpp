@@ -103,7 +103,7 @@ int main() {
 
   while (skip_frame || !WindowShouldClose()) {
     ::SetWindowSize(state.window_width, state.window_height);
-    handlers.handle();
+    handlers.handleAll();
     skip_frame = false;
     // UpdateCamera(&camera);
 
