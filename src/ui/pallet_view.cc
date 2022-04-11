@@ -31,6 +31,7 @@ void PalletView::set_data(std::shared_ptr<schema::Data> data, std::shared_ptr<pa
 schema::Data* PalletView::data() { return data_.get(); }
 
 void PalletView::draw(rendering::Mode3D& frame) {
+  if (!state_) return;
   if (!state_->selectedBoxPos && !state_->selectedBoxType) {
     drawStandard(frame);
     // drawExploded(frame);  // debug

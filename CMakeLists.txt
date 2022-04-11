@@ -11,16 +11,20 @@ endif(EMSCRIPTEN)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra -Wpedantic")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wpedantic")
 
 include(FetchContent)
 FetchContent_Declare(json
   GIT_REPOSITORY https://github.com/nlohmann/json.git
-  GIT_TAG v3.7.3)
+  GIT_TAG v3.10.5
+  GIT_SHALLOW On
+)
 
 FetchContent_GetProperties(json)
 if(NOT json_POPULATED)
   FetchContent_Populate(json)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
   add_subdirectory(${json_SOURCE_DIR} ${json_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
@@ -28,6 +32,7 @@ include(FetchContent)
     FetchContent_Declare(
     raylib
     GIT_REPOSITORY https://github.com/jabartek/raylib.git
+    GIT_SHALLOW On
 )
 FetchContent_GetProperties(raylib)
 if (NOT raylib_POPULATED)
@@ -36,8 +41,10 @@ if (NOT raylib_POPULATED)
     set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(BUILD_GAMES    OFF CACHE BOOL "" FORCE)
     set(BUILD_TESTING  OFF CACHE BOOL "" FORCE)
-    set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
-    add_compile_definitions(DOM_CANVAS_ID_EXTERNAL)
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+    if(EMSCRIPTEN)
+        add_compile_definitions(DOM_CANVAS_ID_EXTERNAL)
+    endif()
     add_subdirectory(${raylib_SOURCE_DIR} ${raylib_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
@@ -45,11 +52,14 @@ include(FetchContent)
     FetchContent_Declare(
     lodepng
     GIT_REPOSITORY https://github.com/jabartek/lodepng-fetchable.git
+    GIT_SHALLOW On
 )
 FetchContent_GetProperties(lodepng)
 if (NOT lodepng_POPULATED)
     FetchContent_Populate(lodepng)
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
     add_subdirectory(${lodepng_SOURCE_DIR} ${lodepng_BINARY_DIR} EXCLUDE_FROM_ALL)
+    include_directories(${lodepng_SOURCE_DIR}/include)
 endif()
 
 set(SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/)
@@ -89,6 +99,14 @@ target_link_libraries(${PROJECT_NAME} PRIVATE raylib nlohmann_json::nlohmann_jso
 else()
 target_link_libraries(${PROJECT_NAME} PRIVATE raylib nlohmann_json::nlohmann_json lodepng)
 endif()
+
+# if (EMSCRIPTEN)
+# target_link_libraries(${PROJECT_NAME} PRIVATE raylib nlohmann_json::nlohmann_json embind)
+# else()
+# target_link_libraries(${PROJECT_NAME} PRIVATE raylib nlohmann_json::nlohmann_json)
+# endif()
+
+
 target_include_directories(${PROJECT_NAME} PRIVATE 
     ${HEADER_DIR} 
 )
@@ -96,6 +114,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 if (EMSCRIPTEN)
 target_link_options(${PROJECT_NAME} PRIVATE -sEXPORT_NAME="paczki_view_module" -sENVIRONMENT=web -sUSE_GLFW=3 -sASSERTIONS=1 -sWASM=1 -sALLOW_MEMORY_GROWTH=1  -sMODULARIZE=1 -sEXPORTED_RUNTIME_METHODS=['specialHTMLTargets','JSEvents','GL','callMain','abort'] -sASYNCIFY -sNO_DISABLE_EXCEPTION_CATCHING)
 else()
+# target_link_options(${PROJECT_NAME} PRIVATE -Wl,-pdb=)
 
 endif()
 

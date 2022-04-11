@@ -48,10 +48,12 @@ void DropHandler::func(std::shared_ptr<pallet_viewer::State> state_ptr) {
   }
   ClearDroppedFiles();
 
-  std::ifstream file(file_names.front());
-  nlohmann::json json;
-  file >> json;
-  state_ptr->data = std::make_shared<schema::Data>(json);
+  {
+    std::ifstream file(file_names.front());
+    nlohmann::json json;
+    file >> json;
+    state_ptr->data = std::make_shared<schema::Data>(json);
+  }
   if (auto& pallet_view = state_ptr->pallet_view) {
     pallet_view->set_data(state_ptr->data, state_ptr);
   }

@@ -2,7 +2,7 @@
 
 namespace janowski::paczki_cpp::utils {
 
-static constexpr std::array<char, 64> b64_map{
+constexpr std::array<char, 64> b64_map{
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
     'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
     's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/',
@@ -16,6 +16,7 @@ std::string toPngBase64(const ::Image& image) {
 
 std::string toPngBase64(std::span<std::uint8_t> image, std::size_t width, std::size_t height) {
   std::vector<unsigned char> png_image;
+  png_image.resize(1000);
   lodepng::encode(png_image, reinterpret_cast<const unsigned char*>(image.data()), width, height);
   png_image.resize(((png_image.size() + 2) / 3) * 3, 0);
 

@@ -73,28 +73,19 @@ struct Main {
 };
 
 int main() {
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE bitor FLAG_VSYNC_HINT bitor
+                 FLAG_MSAA_4X_HINT);
   auto state_ptr = std::make_shared<State>();
-  ui::HandlerStore handlers(state_ptr);
   auto& state = *state_ptr;
   state.window_width = 800;
   state.window_height = 450;
+  InitWindow(state.window_width, state.window_height, "Paczki C++");
+  ui::HandlerStore handlers(state_ptr);
   state.pallet_view.emplace();
   state.camera.emplace(::Vector3{0.f, 0.f, 0.f}, 50.f, 0.f, atanf(1), 45.f);
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE bitor FLAG_VSYNC_HINT bitor
-                 FLAG_MSAA_4X_HINT);
-  InitWindow(state.window_width, state.window_height, "Paczki C++");
 
-  ui::Rotator rotator(makeVector2(GetScreenWidth() - 70, 70), 50);
+  ui::Rotator rotator(Vector2{.x = GetScreenWidth() - 70.f, .y = 70.f}, 50);
   JCamera& camera = *state.camera;
-
-
-  Ray ray{};
-
-  Vector3 g0 = {-50.0f, 0.0f, -50.0f};
-  Vector3 g1 = {-50.0f, 0.0f, 50.0f};
-  Vector3 g2 = {50.0f, 0.0f, 50.0f};
-  Vector3 g3 = {50.0f, 0.0f, -50.0f};
-
   // SetTargetFPS(60);
 
   paczka_init();
@@ -113,9 +104,11 @@ int main() {
     collision.hit = false;
     Color cursorColor = WHITE;
 
-    ray = GetMouseRay(GetMousePosition(), *camera);
+    auto ray = GetMouseRay(GetMousePosition(), *camera);
 
-    RayCollision groundHitInfo = GetRayCollisionQuad(ray, g0, g1, g2, g3);
+    RayCollision groundHitInfo =
+        GetRayCollisionQuad(ray, {.x = -50.f, .y = 0.f, .z = -50.f}, {.x = 50.f, .y = 0.f, .z = -50.f},
+                            {.x = 50.f, .y = 0.f, .z = 50.f}, {.x = -50.f, .y = 0.f, .z = 50.f});
 
     if ((groundHitInfo.hit) && (groundHitInfo.distance < collision.distance)) {
       collision = groundHitInfo;

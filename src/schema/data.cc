@@ -2,6 +2,7 @@
 
 #include <nlohmann/json.hpp>
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 
 /**/
@@ -34,19 +35,20 @@ Data::Data(nlohmann::json& json) : raw_(json) {
       auto id = new_box_pos.id();
       pallet.emplace(id, std::move(new_box_pos));
       order.emplace_back(id);
-      srand(std::stoi(id));  // debug
+      srand(std::hash<std::string_view>{}(id));  // debug
       posToColorMap_.emplace(id, math::makeColor(rand(), rand(), rand()));
     };
   }
-
+  int c = 0;
   for (auto& box_type : json["BoxTypes"]) {
+    c++;
     if (!box_type.contains("$id")) {
       continue;
     }
     BoxType new_box_type{box_type};
     auto id = new_box_type.id();
     box_types_.emplace(id, std::move(new_box_type));
-    srand(std::stoi(id));  // debug
+    srand(std::hash<std::string_view>{}(id));  // debug
     typeToColorMap_.emplace(id, math::makeColor(rand(), rand(), rand()));
   };
 

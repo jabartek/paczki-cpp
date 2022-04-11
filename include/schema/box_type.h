@@ -1,7 +1,9 @@
 #pragma once
 
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace janowski::paczki_cpp::schema {
@@ -27,12 +29,18 @@ class BoxType {
 
   BoxType(nlohmann::json& json, Data* schema = nullptr);
 
-  inline nlohmann::json json() const { return self_; } // debug
+  inline nlohmann::json json() const { return self_; }  // debug
 
   const Sku* sku() const;
 
-  inline const std::string& id() const { return id_; }
-  inline const std::string& sku_id() const { return sku_id_; }
+  inline std::string_view id() const {
+    if (id_) return *id_;
+    return "";
+  }
+  inline std::string_view sku_id() const {
+    if (sku_id_) return *sku_id_;
+    return "";
+  }
   inline double size_x() const { return size_x_; }
   inline double size_y() const { return size_y_; }
   inline double size_z() const { return size_z_; }
@@ -46,8 +54,8 @@ class BoxType {
   inline const std::vector<Item>& items() const { return items_; }
 
  private:
-  std::string id_;
-  std::string sku_id_;
+  std::optional<std::string> id_;
+  std::optional<std::string> sku_id_;
   double size_x_;
   double size_y_;
   double size_z_;
