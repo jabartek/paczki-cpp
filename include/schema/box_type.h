@@ -33,14 +33,11 @@ class BoxType {
 
   const Sku* sku() const;
 
-  inline std::string_view id() const {
-    if (id_) return *id_;
-    return "";
+  inline std::optional<std::string> id() const {
+    return id_;
   }
-  inline std::string_view sku_id() const {
-    if (sku_id_) return *sku_id_;
-    return "";
-  }
+
+  inline std::optional<std::string> sku_id() const { return sku_id_; }
   inline double size_x() const { return size_x_; }
   inline double size_y() const { return size_y_; }
   inline double size_z() const { return size_z_; }

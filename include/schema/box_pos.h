@@ -3,6 +3,8 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
+#include "lib/raylib_clean.h"
+
 namespace janowski::paczki_cpp::schema {
 
 class BoxPos;
@@ -29,6 +31,8 @@ class BoxPos {
   inline bool rotated() const { return rotated_; }
 
   inline void set_schema(Data* schema) { schema_ = schema; }
+
+  std::optional<BoundingBox> bounding_box() const;
 
  private:
   std::string id_;

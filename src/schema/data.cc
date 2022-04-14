@@ -12,6 +12,12 @@
 #include "math/color.h"
 
 namespace janowski::paczki_cpp::schema {
+
+class IncorrectDataException : public std::runtime_error {
+ public:
+  IncorrectDataException(std::string err = "") : std::runtime_error(err) {}
+};
+
 Data::Data(nlohmann::json& json) : raw_(json) {
   for (auto& sku : json["SKUList"]) {
     if (!sku.contains("$id")) {
@@ -20,9 +26,6 @@ Data::Data(nlohmann::json& json) : raw_(json) {
     Sku new_sku{sku};
     skus_.emplace(new_sku.id(), std::move(new_sku));
   };
-  pallet_ids_ = {kDefaultPalletName};
-  pallets_[pallet_ids_[0]];
-  box_orders_[pallet_ids_[0]];
 
   for (auto& pallet_data : json["Pallets"]) {
     if (!pallet_data.contains("$id")) continue;
@@ -38,6 +41,7 @@ Data::Data(nlohmann::json& json) : raw_(json) {
       srand(std::hash<std::string_view>{}(id));  // debug
       posToColorMap_.emplace(id, math::makeColor(rand(), rand(), rand()));
     };
+    last_boxes_[id] = !order.empty() ? std::next(order.end(), -1) : order.end();
   }
   int c = 0;
   for (auto& box_type : json["BoxTypes"]) {
@@ -46,13 +50,20 @@ Data::Data(nlohmann::json& json) : raw_(json) {
       continue;
     }
     BoxType new_box_type{box_type};
-    auto id = new_box_type.id();
-    box_types_.emplace(id, std::move(new_box_type));
-    srand(std::hash<std::string_view>{}(id));  // debug
-    typeToColorMap_.emplace(id, math::makeColor(rand(), rand(), rand()));
+    if (auto id = new_box_type.id(); id) {
+      box_types_.emplace(*id, std::move(new_box_type));
+      srand(std::hash<std::string>{}(*id));  // debug
+      typeToColorMap_.emplace(*id, math::makeColor(rand(), rand(), rand()));
+    }
   };
 
-  active_pallet_ = pallet_ids_[pallet_ids_.size() > 1 ? 1 : 0];
+  if (pallet_ids_.empty()) {
+    throw IncorrectDataException("Missing pallet data!");
+  }
+
+  active_pallet_ = pallet_ids_.front();
+
+  std::cout << "Załadowano " << pallet_ids_.size() << " palet!" << std::endl;
 }
 
 Data::Data(Data&& o)
@@ -91,6 +102,13 @@ void Data::set_active_pallet(const std::string& id) {
   active_pallet_ = id;
 }
 
-void Data::set_active_pallet(std::size_t idx) { set_active_pallet(pallet_ids_.at(idx)); }
+void Data::set_active_pallet(std::size_t idx) { set_active_pallet(*std::next(pallet_ids_.begin(), idx)); }
+
+void Data::advancePallet() {
+  auto it = std::find(pallet_ids_.begin(), pallet_ids_.end(), active_pallet_);
+  std::size_t idx = std::distance(pallet_ids_.begin(), it);
+  idx++;
+  active_pallet_ = *std::next(pallet_ids_.begin(), idx >= pallet_ids_.size() ? 0 : idx);
+}
 
 }  // namespace janowski::paczki_cpp::schema

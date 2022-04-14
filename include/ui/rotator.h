@@ -1,13 +1,15 @@
 #pragma once
 
-#include "lib/raylib_clean.h"
-
 #include <cmath>
+#include <memory>
 #include <utility>
 
 #include "colors.h"
+#include "lib/raylib_clean.h"
 #include "math/vector2.h"
+#include "pallet_viewer/state.h"
 #include "rendering/camera.h"
+#include "ui/drawable.h"
 
 using namespace janowski::paczki_cpp::math;
 
@@ -18,27 +20,28 @@ constexpr float kRotatorZoomSpeed = .985f;
 constexpr float kRotatorRotateSpeed = 1.f / 60.f;
 constexpr unsigned kCircleSides = 36;
 
-class Rotator {
+class Rotator : public Touchable {
  public:
-  inline Rotator(Vector2 center, float radius)
-      : center_(std::move(center)), radius_outer_(radius), radius_inner_(radius * kInnerRadiusMultiplier) {}
-  inline void draw() {
+  inline Rotator(Vector2 center, float radius, std::shared_ptr<pallet_viewer::State> state)
+      : Touchable(),
+        center_(std::move(center)),
+        radius_outer_(radius),
+        radius_inner_(radius * kInnerRadiusMultiplier),
+        state_(state) {}
+  inline void draw() override {
     drawRotationTool();
     drawZoomTool();
   }
 
-  inline bool isOver(const Vector2& pos) const { return Vector2Distance(pos, center_) <= radius_outer_; }
+  inline bool isOver(const Vector2& pos) const override { return Vector2Distance(pos, center_) <= radius_outer_; }
 
-  inline bool handleClick(const Vector2& pos, janowski::paczki_cpp::rendering::Camera& camera) {
-    if (!isOver(pos)) {
-      return false;
-    }
+  inline void leftPress(const Vector2& pos) override {
+    if (!isOver(pos)) return;
     if (Vector2Distance(pos, center_) <= radius_inner_) {
-      handleZoomClick(pos, camera);
+      handleZoomClick(pos);
     } else {
-      handleRotateClick(pos, camera);
+      handleRotateClick(pos);
     }
-    return true;
   }
 
  private:
@@ -53,7 +56,9 @@ class Rotator {
     DrawCircleSector(center_, radius_inner_, 90.f, 270.f, kCircleSides / 2, colors::GRAY70_C);
   }
 
-  inline void handleZoomClick(const Vector2& pos, janowski::paczki_cpp::rendering::Camera& camera) {
+  inline void handleZoomClick(const Vector2& pos) {
+    if (!state_ || !state_->camera) return;
+    auto& camera = *state_->camera;
     if (pos.y > center_.y) {
       camera.zoom(janowski::paczki_cpp::rendering::Camera::Zoom::OUT, kRotatorZoomSpeed);
       return;
@@ -64,7 +69,9 @@ class Rotator {
     }
   }
 
-  inline void handleRotateClick(const Vector2& pos, janowski::paczki_cpp::rendering::Camera& camera) {
+  inline void handleRotateClick(const Vector2& pos) {
+    if (!state_ || !state_->camera) return;
+    auto& camera = *state_->camera;
     auto offset = pos - center_;
     if (offset.y > 0.f && std::fabs(offset.y) > std::fabs(offset.x)) {
       camera.rotate(janowski::paczki_cpp::rendering::Camera::Direction::UP, kRotatorRotateSpeed);
@@ -83,8 +90,10 @@ class Rotator {
       return;
     }
   }
+
   Vector2 center_;
   float radius_outer_;
   float radius_inner_;
+  std::shared_ptr<pallet_viewer::State> state_;
 };
 }  // namespace janowski::paczki_cpp::ui

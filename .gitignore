@@ -9,6 +9,7 @@
 cmake-build-debug/
 bin/
 build/
+build2/
 build_ms/
 out/
 CMakeSettings.json

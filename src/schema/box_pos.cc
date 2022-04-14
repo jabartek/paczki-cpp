@@ -1,5 +1,7 @@
 #include "schema/box_pos.h"
 
+#include "math/vector3.h"
+#include "raylib.h"
 #include "schema/box_type.h"
 #include "schema/data.h"
 #include "schema/sku.h"
@@ -62,6 +64,16 @@ nlohmann::json BoxPos::json() const {
     size["z"] = box_type->second.size_z();
   }
   return data;
+}
+
+std::optional<BoundingBox> BoxPos::bounding_box() const {
+  using namespace janowski::paczki_cpp::math;
+  auto box_type_ptr = box_type();
+  if (!box_type_ptr) return std::nullopt;
+  auto& box_type_ref = *box_type_ptr;
+  auto center = math::makeVector3(x_, y_, z_);
+  auto size = math::makeVector3(box_type_ref.size_x(), box_type_ref.size_y(), box_type_ref.size_z());
+  return BoundingBox{.min = center - (size * .5f), .max = center + (size * .5f)};
 }
 
 }  // namespace janowski::paczki_cpp::schema

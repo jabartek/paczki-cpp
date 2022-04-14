@@ -17,11 +17,11 @@ constexpr auto kDefaultPalletName = "0";
 class Data {
  public:
   using BoxPositions = std::unordered_map<std::string, BoxPos>;
-  using BoxOrder = std::vector<std::string>;
+  using BoxOrder = std::list<std::string>;
   using BoxTypes = std::unordered_map<std::string, BoxType>;
   using Skus = std::unordered_map<std::string, Sku>;
   using ColorMap = std::unordered_map<std::string, Color>;
-  using Pallets = std::vector<std::string>;
+  using Pallets = std::list<std::string>;
 
   Data(nlohmann::json& json);
 
@@ -43,6 +43,8 @@ class Data {
   void set_active_pallet(const std::string& id);
   void set_active_pallet(std::size_t idx);
 
+  void advancePallet();
+
   Vector3 dimensions() const;
 
   Data(Data&& o);
@@ -52,6 +54,7 @@ class Data {
   Pallets pallet_ids_;
   std::map<std::string, BoxPositions> pallets_;
   std::map<std::string, BoxOrder> box_orders_;
+  std::map<std::string, BoxOrder::iterator> last_boxes_;
 
   BoxTypes box_types_;
   Skus skus_;

@@ -10,19 +10,24 @@
 #include "pallet_viewer/state.h"
 #include "schema/box_pos.h"
 #include "schema/data.h"
+#include "ui/drawable.h"
 
 #ifdef EMSCRIPTEN
 
 #include <emscripten.h>
 #include <emscripten/val.h>
 
-EM_JS(void, update_color, (), { document.getElementById("kolorek").style.backgroundColor = Paczka["color"]; });
+// EM_JS(void, update_color, (), { document.getElementById("kolorek").style.backgroundColor = Paczka["color"]; });
 
 #endif
 
 using namespace janowski::paczki_cpp::math;
 
 namespace janowski::paczki_cpp::ui {
+PalletView::PalletView(std::shared_ptr<schema::Data> data, std::shared_ptr<pallet_viewer::State> state) : Touchable() {
+  data_ = data;
+  state_ = state;
+}
 void PalletView::set_data(std::shared_ptr<schema::Data> data, std::shared_ptr<pallet_viewer::State> state) {
   data_ = data;
   state_ = state;
@@ -30,17 +35,17 @@ void PalletView::set_data(std::shared_ptr<schema::Data> data, std::shared_ptr<pa
 
 schema::Data* PalletView::data() { return data_.get(); }
 
-void PalletView::draw(rendering::Mode3D& frame) {
+void PalletView::draw() {
   if (!state_) return;
   if (!state_->selectedBoxPos && !state_->selectedBoxType) {
-    drawStandard(frame);
+    drawStandard();
     // drawExploded(frame);  // debug
   } else {
-    drawSelected(frame);
+    drawSelected();
   }
 }
 
-void PalletView::drawStandard(rendering::Mode3D& /*frame*/) {
+void PalletView::drawStandard() {
   if (!data_ || !state_) return;
   for (const auto& [id, cube] : data_->box_positions()) {
     auto color = state_->color_scheme == pallet_viewer::State::ColorScheme::kByBoxPos
@@ -55,7 +60,7 @@ void PalletView::drawStandard(rendering::Mode3D& /*frame*/) {
   }
 }
 
-void PalletView::drawExploded(rendering::Mode3D& /*frame*/) {  // debug
+void PalletView::drawExploded() {  // debug
   if (!data_ || !state_) return;
   for (const auto& [id, cube] : data_->box_positions()) {
     auto color = state_->color_scheme == pallet_viewer::State::ColorScheme::kByBoxPos
@@ -70,7 +75,7 @@ void PalletView::drawExploded(rendering::Mode3D& /*frame*/) {  // debug
   }
 }
 
-void PalletView::drawSelected(rendering::Mode3D& /*frame*/) {
+void PalletView::drawSelected() {
   if (!data_ || !state_) return;
   for (const auto& [id, cube] : data_->box_positions()) {
     auto color = state_->color_scheme == pallet_viewer::State::ColorScheme::kByBoxPos
