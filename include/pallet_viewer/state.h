@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <memory>
 #include <optional>
 #include <string>
@@ -10,6 +11,11 @@
 #include "ui/pallet_view.h"
 
 namespace janowski::paczki_cpp::pallet_viewer {
+struct Alert {
+  std::string text;
+  std::chrono::time_point<std::chrono::system_clock> timeout;
+};
+
 class State {
  public:
   enum class ColorScheme { kByBoxPos, kByBoxType } color_scheme = ColorScheme::kByBoxPos;
@@ -27,6 +33,8 @@ class State {
 
   std::optional<rendering::Camera> camera;
   std::optional<ui::PalletView> pallet_view;
+
+  std::optional<Alert> alert;
 
   void update();
 };

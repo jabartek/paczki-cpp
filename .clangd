@@ -1,13 +1,13 @@
-# CompileFlags:
-#   Add: [-isystem/home/bartek/emsdk/upstream/emscripten/system/lib/libcxx/include,
-#         -isystem/home/bartek/emsdk/upstream/include,
-#         -isystem/home/bartek/emsdk/upstream/emscripten/system/include,
-#         -isystem/home/bartek/emsdk/upstream/emscripten/system/lib/libcxxabi/src/include,
-#         -isystem/home/bartek/emsdk/upstream/emscripten/system/lib/libcxxabi/include,
-#         -isystem/home/bartek/emsdk/upstream/emscripten/system/lib/libcxx/src/include,
-#         -isystem/home/bartek/emsdk/upstream/emscripten/system/lib/libunwind/include,
-#         -isystem/home/bartek/emsdk/upstream/emscripten/system/lib/compiler-rt/include,
-#         -isystem/home/bartek/emsdk/upstream/emscripten/system/lib/libc/musl/arch/emscripten,
-#         -nostdinc++]
 CompileFlags:
-  Add: [-I../../../../../../llvm-mingw/include/c++/v1]
+  Add: [-isystem/home/bartek/emsdk/upstream/emscripten/system/lib/libcxx/include,
+        -isystem/home/bartek/emsdk/upstream/include,
+        -isystem/home/bartek/emsdk/upstream/emscripten/system/include,
+        -isystem/home/bartek/emsdk/upstream/emscripten/system/lib/libcxxabi/src/include,
+        -isystem/home/bartek/emsdk/upstream/emscripten/system/lib/libcxxabi/include,
+        -isystem/home/bartek/emsdk/upstream/emscripten/system/lib/libcxx/src/include,
+        -isystem/home/bartek/emsdk/upstream/emscripten/system/lib/libunwind/include,
+        -isystem/home/bartek/emsdk/upstream/emscripten/system/lib/compiler-rt/include,
+        -isystem/home/bartek/emsdk/upstream/emscripten/system/lib/libc/musl/arch/emscripten,
+        -nostdinc++]
+# CompileFlags:
+#   Add: [-I../../../../../../llvm-mingw/include/c++/v1]

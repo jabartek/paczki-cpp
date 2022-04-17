@@ -15,6 +15,7 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -43,40 +44,27 @@ using namespace janowski::paczki_cpp::pallet_viewer;
 using JCamera = janowski::paczki_cpp::rendering::Camera;
 
 #ifdef EMSCRIPTEN
-
-void paczka_init() {}
-
 #include <emscripten.h>
+#include <emscripten/bind.h>
 #include <emscripten/val.h>
 
-// extern "C" {
-// const char* DOM_CANVAS_ID_FULL = "#paczki_view";
-// }
+#endif
 
-// EM_JS(void, paczka_init, (), {
-//   Paczka = {};
-//   Paczka["color"] = "#ffffff";
-//   newDiv = document.createElement("div");
-//   newDiv.id = "kolorek";
-//   newDiv.style.width = "100px";
-//   newDiv.style.height = "100px";
-//   document.body.insertBefore(newDiv, document.getElementById("output"));
-// });
+std::shared_ptr<State> state_ptr{nullptr};
 
-#else
+void alertMessage() {
+  std::string text = "Alert!!";
+  int ms_display = 10000;
+  if (!state_ptr) return;
+  state_ptr->alert = {text, std::chrono::system_clock::now() + std::chrono::milliseconds(ms_display)};
+}
 
-void paczka_init() {}
-
-#endif  // EMSCRIPTEN
-
-struct Main {
-  std::optional<std::string> last_color;
-  bool last_color_changed = false;
-};
+using namespace emscripten;
+EMSCRIPTEN_BINDINGS(paczki_plusplus) { function("alertMessage", &alertMessage); };
 
 int main() {
   SetConfigFlags(FLAG_WINDOW_RESIZABLE bitor FLAG_VSYNC_HINT bitor FLAG_MSAA_4X_HINT);
-  auto state_ptr = std::make_shared<State>();
+  state_ptr = std::make_shared<State>();
   auto& state = *state_ptr;
   state.window_width = 800;
   state.window_height = 450;
@@ -88,9 +76,6 @@ int main() {
       std::make_unique<ui::Rotator>(Vector2{.x = state.window_width - 70.f, .y = 70.f}, 50, state_ptr));
 
   JCamera& camera = *state.camera;
-  // SetTargetFPS(60);
-
-  paczka_init();
 
   bool skip_frame{false};
 
@@ -221,6 +206,11 @@ int main() {
     }
 
     // DrawFPS(10, 10);
+
+    if (state.alert) {
+      state.update();
+      DrawText(state.alert->text.c_str(), 20, 20, 20, colors::MAROON1_C);
+    }
 
     for (auto& touchable : state.touchables) {
       touchable->draw();
