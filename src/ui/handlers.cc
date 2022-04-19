@@ -8,6 +8,7 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 
+#include "bind/stores.h"
 #include "colors.h"
 #include "graphics/box.h"
 #include "pallet_viewer/state.h"
@@ -130,6 +131,20 @@ void KeyboardHandler::func(std::shared_ptr<pallet_viewer::State> state_ptr) {
   if (IsKeyReleased(KeyboardKey::KEY_F)) {
     if (!state_ptr->data) return;
     state_ptr->data->advancePallet();
+  }
+
+  if (IsKeyReleased(KeyboardKey::KEY_R)) {
+    try {
+      bind::setValue("active_packet", emscripten::val(rand()));
+    } catch (...) {
+    }
+  }
+
+  if (IsKeyReleased(KeyboardKey::KEY_T)) {
+    try {
+      bind::setValue("active_packet", nlohmann::json({"hello", "ello"}));
+    } catch (...) {
+    }
   }
 }
 

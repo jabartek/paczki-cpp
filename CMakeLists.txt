@@ -70,6 +70,7 @@ set(PROJECT_SOURCES
     ${SOURCE_DIR}/json_utils.cc
 
     ${SOURCE_DIR}/bind/bind.cc
+    ${SOURCE_DIR}/bind/stores.cc
 
     ${SOURCE_DIR}/graphics/box.cc
 
@@ -112,7 +113,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 )
 
 if (EMSCRIPTEN)
-target_link_options(${PROJECT_NAME} PRIVATE -sEXPORT_NAME="paczki_view_module" -sENVIRONMENT=web -sUSE_GLFW=3 -sASSERTIONS=1 -sWASM=1 -sALLOW_MEMORY_GROWTH=1  -sMODULARIZE=1 -sEXPORTED_RUNTIME_METHODS=['specialHTMLTargets','JSEvents','GL','callMain','abort'] -sASYNCIFY -sNO_DISABLE_EXCEPTION_CATCHING)
+target_link_options(${PROJECT_NAME} PRIVATE -sEXPORT_NAME="paczki_view_module" -sENVIRONMENT=web -sUSE_GLFW=3 -sASSERTIONS=1 -sWASM=1 -sALLOW_MEMORY_GROWTH=1  -sMODULARIZE=1 -sEXPORTED_RUNTIME_METHODS=['specialHTMLTargets','JSEvents','GL','callMain','abort'] -sNO_DISABLE_EXCEPTION_CATCHING)
 else()
 # target_link_options(${PROJECT_NAME} PRIVATE -Wl,-pdb=)
 

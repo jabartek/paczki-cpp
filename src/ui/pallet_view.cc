@@ -1,15 +1,16 @@
 #include "ui/pallet_view.h"
 
-#include "lib/raylib_clean.h"
-
+#include <limits>
 #include <memory>
 #include <sstream>
 
 #include "graphics/box.h"
+#include "lib/raylib_clean.h"
 #include "math/vector3.h"
 #include "pallet_viewer/state.h"
 #include "schema/box_pos.h"
 #include "schema/data.h"
+#include "ui/cursor_3d.h"
 #include "ui/drawable.h"
 
 #ifdef EMSCRIPTEN
@@ -24,10 +25,8 @@
 using namespace janowski::paczki_cpp::math;
 
 namespace janowski::paczki_cpp::ui {
-PalletView::PalletView(std::shared_ptr<schema::Data> data, std::shared_ptr<pallet_viewer::State> state) : Touchable() {
-  data_ = data;
-  state_ = state;
-}
+PalletView::PalletView(std::shared_ptr<schema::Data> data, std::shared_ptr<pallet_viewer::State> state)
+    : Touchable(), data_(data), state_(state), cursor_(state_) {}
 void PalletView::set_data(std::shared_ptr<schema::Data> data, std::shared_ptr<pallet_viewer::State> state) {
   data_ = data;
   state_ = state;
@@ -42,6 +41,10 @@ void PalletView::draw() {
     // drawExploded(frame);  // debug
   } else {
     drawSelected();
+  }
+  if (state_->data && state_->data->selected_box()) {
+    cursor_.draw();
+    std::cout << "cursor_.draw();\n";
   }
 }
 
@@ -86,6 +89,35 @@ void PalletView::drawSelected() {
     } else {
       graphics::drawBoxOutline(*data_, cube, color, false);
     }
+  }
+}
+
+void PalletView::leftClick(const Vector2& pos) {
+  if (!state_ || !state_->camera) return;
+  auto& data = state_->data;
+  auto ray = GetMouseRay(pos, state_->camera->get());
+
+  RayCollision collision = {.distance = std::numeric_limits<float>::max()};
+  std::optional<std::string> box_id;
+  for (auto& [id, box_pos] : data->box_positions()) {
+    auto& box_type = data->box_types().at(box_pos.box_type_id());
+    RayCollision cube_hit_info = GetRayCollisionBox(
+        ray, {(graphics::getPosition(box_pos) * graphics::kSizeMultiplier),
+              ((graphics::getPosition(box_pos) + graphics::getSize(box_pos, box_type)) * graphics::kSizeMultiplier)});
+    if (cube_hit_info.hit && cube_hit_info.distance < collision.distance) {
+      collision = cube_hit_info;
+      box_id = box_pos.id();
+    }
+  }
+  if (box_id) {
+    state_->data->select_box(*box_id);
+    auto& box_pos = state_->data->box_positions().at(*box_id);
+    auto& box_type = data->box_types().at(box_pos.box_type_id());
+    auto size = graphics::getSize(box_pos, box_type);
+    ::Vector3 cursor_pos =
+        (graphics::getPosition(box_pos) + size * 0.5f + ::Vector3{0.f, size.y, 0.f} * 0.5f) * graphics::kSizeMultiplier;
+    cursor_ = ui::Cursor3D(state_, 3.f, cursor_pos);
+    std::cout << cursor_pos.x << "\t" << cursor_pos.y << "\t" << cursor_pos.z << "\n";
   }
 }
 

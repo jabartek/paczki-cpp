@@ -8,6 +8,7 @@
 #include "rendering/camera.h"
 #include "schema/data.h"
 #include "ui/drawable.h"
+#include "ui/handlers.h"
 #include "ui/pallet_view.h"
 
 namespace janowski::paczki_cpp::pallet_viewer {
@@ -35,6 +36,10 @@ class State {
   std::optional<ui::PalletView> pallet_view;
 
   std::optional<Alert> alert;
+
+  std::optional<ui::HandlerStore> handler_store;
+
+  bool skip_frame{false};
 
   void update();
 };

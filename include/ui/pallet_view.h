@@ -4,6 +4,7 @@
 
 #include "lib/raylib_clean.h"
 #include "rendering/mode_3d.h"
+#include "ui/cursor_3d.h"
 #include "ui/drawable.h"
 
 namespace janowski::paczki_cpp::schema {
@@ -25,7 +26,7 @@ class PalletView : public Touchable {
   void draw() override;
   bool isOver(const Vector2& /*position*/) const override { return true; };
 
-  bool handleClick(const Vector2& pos);
+  void leftClick(const Vector2& pos) override;
 
  private:
   void drawStandard();
@@ -34,5 +35,7 @@ class PalletView : public Touchable {
 
   std::shared_ptr<schema::Data> data_;
   std::shared_ptr<pallet_viewer::State> state_;
+
+  ui::Cursor3D cursor_;
 };
 }  // namespace janowski::paczki_cpp::ui

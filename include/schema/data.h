@@ -6,6 +6,7 @@
 #include <string_view>
 #include <unordered_map>
 
+#include "bind/stores.h"
 #include "lib/raylib_clean.h"
 #include "schema/box_pos.h"
 #include "schema/box_type.h"
@@ -40,6 +41,14 @@ class Data {
 
   inline const Pallets& pallets() const { return pallet_ids_; }
 
+  inline std::optional<std::string> selected_box() const { return selected_box_; }
+  inline void select_box(std::string id) {
+    if (box_positions().contains(id)) {
+      selected_box_ = id;
+      bind::setValue("active_packet", {id});
+    }
+  }
+
   void set_active_pallet(const std::string& id);
   void set_active_pallet(std::size_t idx);
 
@@ -63,6 +72,7 @@ class Data {
   ColorMap posToColorMap_;
 
   std::string active_pallet_;
+  std::optional<std::string> selected_box_;
 };
 
 }  // namespace janowski::paczki_cpp::schema
