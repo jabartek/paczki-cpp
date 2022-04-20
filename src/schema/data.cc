@@ -60,9 +60,6 @@ Data::Data(nlohmann::json& json) : raw_(json) {
   if (pallet_ids_.empty()) {
     throw IncorrectDataException("Missing pallet data!");
   }
-
-  active_pallet_ = pallet_ids_.front();
-
   std::cout << "Załadowano " << pallet_ids_.size() << " palet!" << std::endl;
 }
 
@@ -93,23 +90,6 @@ Data& Data::operator=(Data&& rhs) {
 
 Vector3 Data::dimensions() const {
   return {raw_["SizeX"].get<float>(), raw_["SizeZ"].get<float>(), raw_["SizeY"].get<float>()};
-}
-
-void Data::set_active_pallet(const std::string& id) {
-  if (std::find(pallet_ids_.begin(), pallet_ids_.end(), id) == pallet_ids_.end()) {
-    throw std::runtime_error("`Data::set_active_pallet` - Invalid pallet id: " + id);
-  }
-  selected_box_ = std::nullopt;
-  active_pallet_ = id;
-}
-
-void Data::set_active_pallet(std::size_t idx) { set_active_pallet(*std::next(pallet_ids_.begin(), idx)); }
-
-void Data::advancePallet() {
-  auto it = std::find(pallet_ids_.begin(), pallet_ids_.end(), active_pallet_);
-  std::size_t idx = std::distance(pallet_ids_.begin(), it);
-  idx++;
-  set_active_pallet(*std::next(pallet_ids_.begin(), idx >= pallet_ids_.size() ? 0 : idx));
 }
 
 }  // namespace janowski::paczki_cpp::schema

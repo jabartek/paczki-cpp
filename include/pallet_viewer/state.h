@@ -23,8 +23,6 @@ class State {
 
   std::shared_ptr<schema::Data> data;
   std::optional<schema::Data::ColorMap> color_map;
-  std::optional<std::string> selectedBoxPos;
-  std::optional<std::string> selectedBoxType;
   std::optional<std::string> hoverBoxPos;
 
   std::vector<std::unique_ptr<ui::Touchable>> touchables;

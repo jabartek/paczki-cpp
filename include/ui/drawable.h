@@ -19,6 +19,8 @@ class Touchable : public Drawable {
   virtual void rightPress(const Vector2& /*pos*/){};
   virtual void leftClick(const Vector2& /*pos*/){};
   virtual void rightClick(const Vector2& /*pos*/){};
+  virtual void leftRelease(const Vector2& /*pos*/){};
+  virtual void rightRelease(const Vector2& /*pos*/){};
   virtual void hover(const Vector2& /*pos*/){};
   virtual ~Touchable() = default;
 

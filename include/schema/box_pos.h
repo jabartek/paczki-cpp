@@ -28,7 +28,10 @@ class BoxPos {
   inline double x() const { return x_; }
   inline double y() const { return y_; }
   inline double z() const { return z_; }
+  inline ::Vector3 position() const { return {(float)x_, (float)y_, (float)z_}; }
   inline bool rotated() const { return rotated_; }
+
+  bool tryMove(const ::Vector3& delta, const std::string& pallet_id);
 
   inline void set_schema(Data* schema) { schema_ = schema; }
 

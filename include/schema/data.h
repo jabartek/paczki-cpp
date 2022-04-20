@@ -26,12 +26,10 @@ class Data {
 
   Data(nlohmann::json& json);
 
-  inline const BoxPositions& box_positions() const { return box_positions(active_pallet_); }
   inline const BoxPositions& box_positions(const std::string& pallet) const { return pallets_.at(pallet); }
   inline const BoxTypes& box_types() const { return box_types_; }
   inline const Skus& skus() const { return skus_; }
 
-  inline BoxPositions& box_positions() { return box_positions(active_pallet_); }
   inline BoxPositions& box_positions(const std::string& pallet) { return pallets_.at(pallet); }
   inline BoxTypes& box_types() { return box_types_; }
   inline Skus& skus() { return skus_; }
@@ -40,19 +38,6 @@ class Data {
   inline ColorMap& pos_to_color_map() { return posToColorMap_; }
 
   inline const Pallets& pallets() const { return pallet_ids_; }
-
-  inline std::optional<std::string> selected_box() const { return selected_box_; }
-  inline void select_box(std::string id) {
-    if (box_positions().contains(id)) {
-      selected_box_ = id;
-      bind::setValue("active_packet", {id});
-    }
-  }
-
-  void set_active_pallet(const std::string& id);
-  void set_active_pallet(std::size_t idx);
-
-  void advancePallet();
 
   Vector3 dimensions() const;
 
@@ -70,9 +55,6 @@ class Data {
   nlohmann::json raw_;
   ColorMap typeToColorMap_;
   ColorMap posToColorMap_;
-
-  std::string active_pallet_;
-  std::optional<std::string> selected_box_;
 };
 
 }  // namespace janowski::paczki_cpp::schema

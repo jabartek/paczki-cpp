@@ -35,7 +35,13 @@ class Cursor3D : public Touchable {
   bool isOver(const Vector2& /*pos*/) const override;
 
   void leftPress(const Vector2& pos) override;
-  void leftClick(const Vector2& /*pos*/) override;
+  void leftRelease(const Vector2& /*pos*/) override;
+
+  inline const ::Vector3& position() const { return pos_; }
+  inline void set_position(::Vector3 pos) {
+    pos_ = std::move(pos);
+    updateCubes();
+  }
 
  private:
   std::shared_ptr<pallet_viewer::State> state_;

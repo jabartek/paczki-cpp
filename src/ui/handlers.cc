@@ -58,12 +58,6 @@ void loadFile(const std::string& path, std::shared_ptr<pallet_viewer::State> sta
   //   auto set_box_type_list = emscripten::val::global("setBoxTypeList");
   //   auto set_box_type_list_result = set_box_type_list(box_type_list.dump());
   // #endif
-  const auto setSelectedBoxType = false;  // debug
-  if (setSelectedBoxType) {
-    auto random_it =
-        std::next(std::begin(state_ptr->data->box_positions()), rand() % state_ptr->data->box_types().size());
-    state_ptr->selectedBoxType = random_it->second.box_type_id();
-  }
 }
 }  // namespace
 
@@ -129,8 +123,8 @@ void KeyboardHandler::func(std::shared_ptr<pallet_viewer::State> state_ptr) {
     loadFile("test.json", state_ptr);
   }
   if (IsKeyReleased(KeyboardKey::KEY_F)) {
-    if (!state_ptr->data) return;
-    state_ptr->data->advancePallet();
+    if (!state_ptr->pallet_view) return;
+    state_ptr->pallet_view->advancePallet();
   }
 
   if (IsKeyReleased(KeyboardKey::KEY_R)) {

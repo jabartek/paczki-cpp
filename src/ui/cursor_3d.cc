@@ -32,6 +32,7 @@ bool Cursor3D::isOver(const Vector2& /*pos*/) const { return true; }
 
 void Cursor3D::leftPress(const Vector2& pos) {
   if (!state_ || !state_->camera) return;
+  std::cout << "Cursor3D::leftPress\tx:\t" << pos.x << "\ty:\t" << pos.y << "\n";
   updateCubes();
   auto camera = state_->camera->get();
   auto ray = GetMouseRay(pos, camera);
@@ -129,7 +130,7 @@ void Cursor3D::leftPress(const Vector2& pos) {
     }
   }
 }
-void Cursor3D::leftClick(const Vector2& /*pos*/) {
+void Cursor3D::leftRelease(const Vector2& /*pos*/) {
   last_cube_ = LastCube::None;
   is_cursor_dragged_ = false;
 }

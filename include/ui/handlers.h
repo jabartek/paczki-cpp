@@ -11,6 +11,8 @@ class State;
 
 namespace janowski::paczki_cpp::ui {
 
+constexpr int kMaxClickLength = 20; // todo: change to std::chrono::duration
+
 struct Handler {
   Handler(std::function<bool(std::shared_ptr<pallet_viewer::State>)> pred,
           std::function<void(std::shared_ptr<pallet_viewer::State>)> func)

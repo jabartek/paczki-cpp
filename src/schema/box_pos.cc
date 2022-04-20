@@ -1,5 +1,8 @@
 #include "schema/box_pos.h"
 
+#include <iostream>  // debug
+
+#include "graphics/box.h"
 #include "math/vector3.h"
 #include "raylib.h"
 #include "schema/box_type.h"
@@ -66,14 +69,48 @@ nlohmann::json BoxPos::json() const {
   return data;
 }
 
+bool BoxPos::tryMove(const ::Vector3& delta, const std::string& pallet_id) {
+  auto new_box_pos = *this;
+  new_box_pos.x_ += delta.x;
+  new_box_pos.y_ += delta.y;
+  new_box_pos.z_ += delta.z;
+  auto& pallet = schema_->box_positions(pallet_id);
+
+  auto new_box_bounding_box = new_box_pos.bounding_box();
+  if (!new_box_bounding_box) return true;
+  for (auto& [id, box] : pallet) {
+    if (id == new_box_pos.id()) continue;
+    auto box_bounding_box = box.bounding_box();
+    if (!box_bounding_box) continue;
+    if (graphics::checkCollision(*new_box_bounding_box, *box_bounding_box) ||
+        graphics::checkCollision(*box_bounding_box, *new_box_bounding_box)) {
+      std::cout << "BB1 min: " << new_box_bounding_box->min.x << ", " << new_box_bounding_box->min.y << ", "
+                << new_box_bounding_box->min.z << "\n";
+      std::cout << "BB1 max: " << new_box_bounding_box->max.x << ", " << new_box_bounding_box->max.y << ", "
+                << new_box_bounding_box->max.z << "\n";
+      std::cout << "BB2 min: " << box_bounding_box->min.x << ", " << box_bounding_box->min.y << ", "
+                << box_bounding_box->min.z << "\n";
+      std::cout << "BB2 max: " << box_bounding_box->max.x << ", " << box_bounding_box->max.y << ", "
+                << box_bounding_box->max.z << "\n";
+      std::cout << new_box_pos.id_ << " " << id << "\n";
+      return false;
+    }
+  }
+
+  x_ += delta.x;
+  y_ += delta.y;
+  z_ += delta.z;
+  return true;
+}
+
 std::optional<BoundingBox> BoxPos::bounding_box() const {
-  using namespace janowski::paczki_cpp::math;
   auto box_type_ptr = box_type();
   if (!box_type_ptr) return std::nullopt;
-  auto& box_type_ref = *box_type_ptr;
-  auto center = math::makeVector3(x_, y_, z_);
-  auto size = math::makeVector3(box_type_ref.size_x(), box_type_ref.size_y(), box_type_ref.size_z());
-  return BoundingBox{.min = center - (size * .5f), .max = center + (size * .5f)};
+  using namespace math;
+
+  auto position = graphics::getPosition(*this);
+  auto size = graphics::getSize(*this, *box_type_ptr);
+  return BoundingBox{position, position + size};
 }
 
 }  // namespace janowski::paczki_cpp::schema

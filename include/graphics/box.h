@@ -26,4 +26,6 @@ Vector3 getItemSize(const schema::BoxPos& box_pos, const schema::BoxType::Item& 
 
 Vector3 getItemPosition(const schema::BoxPos& box_pos, const schema::BoxType::Item& item);
 
+bool checkCollision(BoundingBox box1, BoundingBox box2);
+
 }  // namespace janowski::paczki_cpp::graphics

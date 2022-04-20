@@ -90,8 +90,8 @@ void mainLoop() {
     hitObjectName = "Ground";
   }
 
-  if (auto& data = state_ptr->data; data) {
-    for (auto& [id, box_pos] : data->box_positions()) {
+  if (auto& data = state_ptr->data; data && state.pallet_view && state.pallet_view->active_pallet()) {
+    for (auto& [id, box_pos] : data->box_positions(*state.pallet_view->active_pallet())) {
       auto& box_type = data->box_types().at(box_pos.box_type_id());
       RayCollision cube_hit_info = GetRayCollisionBox(
           ray, {(graphics::getPosition(box_pos) * graphics::kSizeMultiplier),
@@ -106,38 +106,75 @@ void mainLoop() {
   }
 
   {
+    static int left_button_lenght{0};
+    static int right_button_lenght{0};
     auto mouse_pos = GetMousePosition();
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-      std::cout << "Left button pressed at " << mouse_pos.x << "," << mouse_pos.y << "\n";
-      for (auto& touchable : state.touchables) {
-        if (!touchable->isOver(mouse_pos)) continue;
-        touchable->leftPress(mouse_pos);
+      left_button_lenght++;
+      if (left_button_lenght > ui::kMaxClickLength) {
+        std::cout << "Left button pressed at " << mouse_pos.x << "," << mouse_pos.y << "\n";
+        for (auto& touchable : state.touchables) {
+          if (!touchable->isOver(mouse_pos)) continue;
+          touchable->leftPress(mouse_pos);
+        }
+
+        if (state.pallet_view) {
+          state.pallet_view->leftPress(mouse_pos);
+        }
       }
     }
     if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-      std::cout << "Right button pressed at " << mouse_pos.x << "," << mouse_pos.y << "\n";
-      for (auto& touchable : state.touchables) {
-        if (!touchable->isOver(mouse_pos)) continue;
-        touchable->rightPress(mouse_pos);
+      right_button_lenght++;
+      if (right_button_lenght > ui::kMaxClickLength) {
+        std::cout << "Right button pressed at " << mouse_pos.x << "," << mouse_pos.y << "\n";
+        for (auto& touchable : state.touchables) {
+          if (!touchable->isOver(mouse_pos)) continue;
+          touchable->rightPress(mouse_pos);
+        }
       }
     }
     if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
-      std::cout << "Left button clicked at " << mouse_pos.x << "," << mouse_pos.y << "\n";
-      for (auto& touchable : state.touchables) {
-        if (!touchable->isOver(mouse_pos)) continue;
-        touchable->leftClick(mouse_pos);
-      }
+      if (left_button_lenght <= ui::kMaxClickLength) {
+        std::cout << "Left button clicked at " << mouse_pos.x << "," << mouse_pos.y << "\n";
+        for (auto& touchable : state.touchables) {
+          if (!touchable->isOver(mouse_pos)) continue;
+          touchable->leftClick(mouse_pos);
+        }
 
-      if (state.pallet_view) {
-        state.pallet_view->leftClick(mouse_pos);
+        if (state.pallet_view) {
+          state.pallet_view->leftClick(mouse_pos);
+        }
+      } else {
+        for (auto& touchable : state.touchables) {
+          if (!touchable->isOver(mouse_pos)) continue;
+          touchable->leftRelease(mouse_pos);
+        }
+        if (state.pallet_view) {
+          state.pallet_view->leftRelease(mouse_pos);
+        }
       }
+      left_button_lenght = 0;
     }
     if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT)) {
-      std::cout << "Right button clicked at " << mouse_pos.x << "," << mouse_pos.y << "\n";
-      for (auto& touchable : state.touchables) {
-        if (!touchable->isOver(mouse_pos)) continue;
-        touchable->rightClick(mouse_pos);
+      if (right_button_lenght <= ui::kMaxClickLength) {
+        std::cout << "Right button clicked at " << mouse_pos.x << "," << mouse_pos.y << "\n";
+        for (auto& touchable : state.touchables) {
+          if (!touchable->isOver(mouse_pos)) continue;
+          touchable->rightClick(mouse_pos);
+        }
+        if (state.pallet_view) {
+          state.pallet_view->rightClick(mouse_pos);
+        }
+      } else {
+        for (auto& touchable : state.touchables) {
+          if (!touchable->isOver(mouse_pos)) continue;
+          touchable->rightRelease(mouse_pos);
+        }
+        if (state.pallet_view) {
+          state.pallet_view->rightRelease(mouse_pos);
+        }
       }
+      right_button_lenght = 0;
     }
     for (auto& touchable : state.touchables) {
       if (!touchable->isOver(mouse_pos)) continue;
@@ -157,9 +194,10 @@ void mainLoop() {
       auto normalEnd = collision.point + collision.normal;
       DrawLine3D(collision.point, normalEnd, RED);
     }
-    if (!(hitObjectName == "Ground" || hitObjectName == "None")) {
-      graphics::drawBoxOutline(*state_ptr->data, state_ptr->data->box_positions().at(hitObjectName),
-                               state_ptr->color_map->at(hitObjectName));
+    if (!(hitObjectName == "Ground" || hitObjectName == "None") && state.pallet_view &&
+        state.pallet_view->active_pallet()) {
+      const auto& box_pos = state_ptr->data->box_positions(*state.pallet_view->active_pallet()).at(hitObjectName);
+      graphics::drawBoxOutline(*state_ptr->data, box_pos, state_ptr->color_map->at(hitObjectName));
     }
 
     DrawRay(ray, MAROON);
@@ -177,14 +215,12 @@ void mainLoop() {
   if (collision.hit) {
     int ypos = 50;
 
-    if (!(hitObjectName == "Ground" || hitObjectName == "None")) {
-      DrawText(TextFormat("Box Type: %d", std::stoi(state_ptr->data->box_positions().at(hitObjectName).box_type_id())),
-               10, ypos += 15, 10, BLACK);
-      DrawText(TextFormat("Items: %d", state_ptr->data->box_types()
-                                           .at(state_ptr->data->box_positions().at(hitObjectName).box_type_id())
-                                           .items()
-                                           .size()),
-               10, ypos += 15, 10, BLACK);
+    if (!(hitObjectName == "Ground" || hitObjectName == "None") && state.pallet_view &&
+        state.pallet_view->active_pallet()) {
+      const auto& box_pos = state_ptr->data->box_positions(*state.pallet_view->active_pallet()).at(hitObjectName);
+      DrawText(TextFormat("Box Id: %d", std::stoi(box_pos.id())), 10, ypos += 15, 10, BLACK);
+      DrawText(TextFormat("Items: %d", state_ptr->data->box_types().at(box_pos.box_type_id()).items().size()), 10,
+               ypos += 15, 10, BLACK);
     }
 
     ypos += 150;
@@ -242,7 +278,7 @@ int main() {
 
   state.touchables.emplace_back(
       std::make_unique<ui::Rotator>(Vector2{.x = state.window_width - 70.f, .y = 70.f}, 50, state_ptr));
-  state.touchables.emplace_back(std::make_unique<ui::Cursor3D>(state_ptr));
+  // state.touchables.emplace_back(std::make_unique<ui::Cursor3D>(state_ptr));
 #ifdef EMSCRIPTEN
   emscripten_set_main_loop(mainLoop, 0, 1);
 #else
