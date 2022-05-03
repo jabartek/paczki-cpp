@@ -15,8 +15,7 @@
 
 #ifdef EMSCRIPTEN
 
-#include <emscripten.h>
-#include <emscripten/val.h>
+#include "emscripten_wrapper.h"
 
 // EM_JS(void, update_color, (), { document.getElementById("kolorek").style.backgroundColor = Paczka["color"]; });
 
@@ -173,7 +172,7 @@ void PalletView::selectBoxPos(std::string id) {
   const auto& box_positions = data_->box_positions(*active_pallet_);
   if (box_positions.contains(id)) {
     selected_box_pos_ = id;
-    bind::setValue("active_packet", {id});
+    bind::setValue("active_packet", nlohmann::json{id});
   }
 }
 void PalletView::unselectBoxPos() {
@@ -187,7 +186,7 @@ void PalletView::selectBoxType(std::string id) {
   const auto& box_types = data_->box_positions(*active_pallet_);
   if (box_types.contains(id)) {
     selected_box_type_ = id;
-    bind::setValue("active_box_type", {id});
+    bind::setValue("active_box_type", nlohmann::json{id});
   }
 }
 void PalletView::unselectBoxType() {

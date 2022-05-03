@@ -28,8 +28,7 @@ nlohmann::json call_json(const std::string& function,
 
 #else
 namespace janowski::paczki_cpp::bind {
-[[maybe_unused]] bool call(const std::string& function,
-                           std::optional<std::reference_wrapper<const nlohmann::json>> data) {
+[[maybe_unused]] bool call(const std::string&, std::optional<std::reference_wrapper<const nlohmann::json>>) {
   return false;
 }
 

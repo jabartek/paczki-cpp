@@ -44,9 +44,8 @@ using namespace janowski::paczki_cpp::pallet_viewer;
 using JCamera = janowski::paczki_cpp::rendering::Camera;
 
 #ifdef EMSCRIPTEN
-#include <emscripten.h>
-#include <emscripten/bind.h>
-#include <emscripten/val.h>
+
+#include "emscripten_wrapper.h"
 
 #endif
 
@@ -59,15 +58,18 @@ void alertMessage() {
   state_ptr->alert = {text, std::chrono::system_clock::now() + std::chrono::milliseconds(ms_display)};
 }
 
+#ifdef EMSCRIPTEN
 EMSCRIPTEN_BINDINGS(paczki_plusplus_alertMessage) { emscripten::function("alertMessage", &alertMessage); };
-
+#endif
 
 void selectPallet(std::string pallet_id){
     if (!state_ptr || !state_ptr->pallet_view) return;
     state_ptr->pallet_view->set_active_pallet(pallet_id);
 }
 
+#ifdef EMSCRIPTEN
 EMSCRIPTEN_BINDINGS(paczki_plusplus_selectPallet) { emscripten::function("selectPallet", &selectPallet); };
+#endif
 
 
 void mainLoop() {

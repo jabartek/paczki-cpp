@@ -1,0 +1,51 @@
+name: Build and upload
+
+on:
+  push:
+    branches: [ master, actions ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build_emscripten:
+    runs-on: self-hosted
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure CMake with emcmake
+      run: emcmake cmake -B ${{github.workspace}}/build_emsdk -G Ninja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DPLATFORM=Web
+
+    - name: Build with emscripten
+      run: cmake --build ${{github.workspace}}/build_emsdk -j $(nproc --all)
+            
+    - name: Upload Emscripten artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: wasm
+        path: |
+          ${{github.workspace}}/build_emsdk/paczki_plusplus.wasm
+          ${{github.workspace}}/build_emsdk/paczki_plusplus.js
+          
+  build_llvm_mingw:
+    runs-on: self-hosted
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure CMake for llvm-mingw
+      run: cmake -B ${{github.workspace}}/build_llvm_mingw -G Ninja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DLLVM_ARCH=x86_64 -DLLVM_PREFIX=/opt/llvm-mingw -DCMAKE_TOOLCHAIN_FILE=/opt/llvm-mingw/toolchain.cmake
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build_llvm_mingw -j $(nproc --all)
+            
+    - name: Upload llvm-mingw artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: windows
+        path: |
+          ${{github.workspace}}/build_llvm_mingw/paczki_plusplus.exe
+          

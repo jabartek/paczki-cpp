@@ -43,9 +43,7 @@ Data::Data(nlohmann::json& json) : raw_(json) {
     };
     last_boxes_[id] = !order.empty() ? std::next(order.end(), -1) : order.end();
   }
-  int c = 0;
   for (auto& box_type : json["BoxTypes"]) {
-    c++;
     if (!box_type.contains("$id")) {
       continue;
     }

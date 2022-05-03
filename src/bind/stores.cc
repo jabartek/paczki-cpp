@@ -6,6 +6,8 @@
 #include "nlohmann/json.hpp"
 
 namespace janowski::paczki_cpp::bind {
+
+#ifdef EMSCRIPTEN
 std::unordered_map<std::string, emscripten::val> stores = {};
 void addStore(std::string name, emscripten::val store) {
   std::cout << "Hello stores " << name << "!\n";
@@ -36,4 +38,21 @@ void setValue(const std::string& name, nlohmann::json json) {
 }
 
 EMSCRIPTEN_BINDINGS(paczki_plusplus) { emscripten::function("addStore", &addStore); };
+#else
+
+std::unordered_map<std::string, emscripten::val> stores = {};
+void addStore(std::string, emscripten::val) {}
+
+emscripten::val& getFrom(const std::string& name) {
+  if (!stores.contains(name)) {
+    throw std::runtime_error("(getFrom) No store named \"" + name + "\"!");
+  }
+  return stores.at(name);
+}
+
+void setValue(const std::string&, emscripten::val) {}
+
+void setValue(const std::string&, nlohmann::json) {}
+
+#endif
 }  // namespace janowski::paczki_cpp::bind

@@ -21,8 +21,7 @@ using JCamera = janowski::paczki_cpp::rendering::Camera;
 
 #ifdef EMSCRIPTEN
 
-#include <emscripten.h>
-#include <emscripten/val.h>
+#include "emscripten_wrapper.h"
 
 extern "C" {
 const char* DOM_CANVAS_ID_FULL = "#canvas_test";

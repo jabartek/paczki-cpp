@@ -14,7 +14,7 @@
 #include "pallet_viewer/state.h"
 
 #ifdef EMSCRIPTEN
-#include <emscripten/val.h>
+#include "emscripten_wrapper.h"
 #endif
 
 using namespace janowski::paczki_cpp::math;

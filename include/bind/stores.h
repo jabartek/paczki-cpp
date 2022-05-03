@@ -1,7 +1,6 @@
 #pragma once
 
-#include <emscripten/bind.h>
-#include <emscripten/val.h>
+#include "emscripten_wrapper.h"
 
 #include <nlohmann/json.hpp>
 #include <string>

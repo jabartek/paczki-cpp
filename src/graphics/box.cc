@@ -12,7 +12,7 @@
 namespace janowski::paczki_cpp::graphics {
 using namespace math;
 
-void drawBox(const schema::Data& data, const schema::BoxPos& box_pos, const schema::BoxType& box_type,
+void drawBox(const schema::Data& /*data*/, const schema::BoxPos& box_pos, const schema::BoxType& box_type,
              const Color& color) {
   auto size = getSize(box_pos, box_type);
   auto position = getPosition(box_pos) + (size * 0.5f);
@@ -21,7 +21,7 @@ void drawBox(const schema::Data& data, const schema::BoxPos& box_pos, const sche
   DrawCube(position, size.x, size.y, size.z, color);
 }
 
-void drawBoxExploded(const schema::Data& data, const schema::BoxPos& box_pos, const schema::BoxType& box_type,
+void drawBoxExploded(const schema::Data& /*data*/, const schema::BoxPos& box_pos, const schema::BoxType& box_type,
                      const Color& color, const Vector3& center, float ratio) { //debug
   auto size = getSize(box_pos, box_type);
   auto position = getPosition(box_pos) + (size * 0.5f);
