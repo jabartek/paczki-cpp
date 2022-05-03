@@ -5,6 +5,7 @@ on:
     branches: [ master, actions ]
   pull_request:
     branches: [ master ]
+  workflow_dispatch:
 
 env:
   BUILD_TYPE: Release
@@ -48,4 +49,38 @@ jobs:
         name: windows
         path: |
           ${{github.workspace}}/build_llvm_mingw/paczki_plusplus.exe
-          
+
+  deploy_webpage:
+    runs-on: self-hosted
+    needs: [build_emscripten, build_llvm_mingw]
+
+    steps:
+    - name: Checkout paczki-svelte repo
+      uses: actions/checkout@v3
+      with:
+        repository: jabartek/paczki-svelte
+        token: ${{ secrets.GH_PAT }}
+        path: paczki-svelte/
+
+    - name: Download wasm result
+      uses: actions/download-artifact@v3
+      with: 
+        name: wasm
+        path: wasm/
+
+    - name: Copy wasm results to paczki-svelte
+      run: |
+        mkdir paczki-svelte/src/external/ -p
+        mkdir paczki-svelte/public/build/ -p
+        cp wasm/paczki_plusplus.js paczki-svelte/src/external/
+        cp wasm/paczki_plusplus.wasm paczki-svelte/public/build/ 
+
+    - name: Install and build paczki-svelte
+      run: |
+        npm install
+        npm run build
+      working-directory: paczki-svelte/
+
+    - name: Deploy page
+      run: cp public/* /var/www/paczki -rf
+      working-directory: paczki-svelte/
