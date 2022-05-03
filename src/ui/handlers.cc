@@ -40,24 +40,26 @@ void loadFile(const std::string& path, std::shared_ptr<pallet_viewer::State> sta
       state_ptr->color_map->emplace(id, colors::kColors[rand() % colors::kColors.size()]);
     }
   }
-  // #ifdef EMSCRIPTEN
-  //   nlohmann::json sku_list;
-  //   for (auto& sku : state_ptr->data->skus()) {
-  //     sku_list[sku.first] = sku.second.json();
-  //   }
+  #ifdef EMSCRIPTEN
+    // nlohmann::json sku_list;
+    // for (auto& sku : state_ptr->data->skus()) {
+    //   sku_list[sku.first] = sku.second.json();
+    // }
 
-  //   bind::call("setSkuList", sku_list);
+    // bind::setValue("setSkuList", sku_list);
 
-  //   auto palletIdList = nlohmann::json(state_ptr->data->pallets());
-  //   bind::call("setPalletIdList", palletIdList);
+    auto pallet_id_list = nlohmann::json(state_ptr->data->pallets());
+    bind::setValue("pallet_id_list", pallet_id_list);
 
-  //   nlohmann::json box_type_list;
-  //   for (auto& box_type : state_ptr->data->box_types()) {
-  //     box_type_list[box_type.first] = box_type.second.json();
-  //   }
-  //   auto set_box_type_list = emscripten::val::global("setBoxTypeList");
-  //   auto set_box_type_list_result = set_box_type_list(box_type_list.dump());
-  // #endif
+    nlohmann::json box_type_list;
+    for (auto& box_type : state_ptr->data->box_types()) {
+      box_type_list[box_type.first] = box_type.second.json();
+    }
+    bind::setValue("box_type_list", box_type_list);
+
+    // auto set_box_type_list = emscripten::val::global("setBoxTypeList");
+    // auto set_box_type_list_result = set_box_type_list(box_type_list.dump());
+  #endif
 }
 }  // namespace
 

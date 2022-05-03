@@ -143,7 +143,7 @@ void PalletView::leftRelease(const Vector2& pos) {
   ::Vector3 cursor_pos =
       (graphics::getPosition(box_pos) + size * 0.5f + ::Vector3{0.f, size.y, 0.f} * 0.5f) * graphics::kSizeMultiplier;
   cursor_.leftRelease(pos);
-  cursor_ = ui::Cursor3D(state_, 3.f, cursor_pos);
+  cursor_ = ui::Cursor3D(state_, 1.5f, cursor_pos);
 }
 
 void PalletView::leftClick(const Vector2& pos) {
@@ -155,7 +155,7 @@ void PalletView::leftClick(const Vector2& pos) {
     auto size = graphics::getSize(box_pos, box_type);
     ::Vector3 cursor_pos =
         (graphics::getPosition(box_pos) + size * 0.5f + ::Vector3{0.f, size.y, 0.f} * 0.5f) * graphics::kSizeMultiplier;
-    cursor_ = ui::Cursor3D(state_, 3.f, cursor_pos);
+    cursor_ = ui::Cursor3D(state_, 1.5f, cursor_pos);
     std::cout << cursor_pos.x << "\t" << cursor_pos.y << "\t" << cursor_pos.z << "\n";
   }
 }
