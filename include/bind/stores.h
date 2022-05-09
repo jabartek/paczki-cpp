@@ -1,6 +1,6 @@
 #pragma once
 
-#include "emscripten_wrapper.h"
+#include "lib/emscripten_wrapper.h"
 
 #include <nlohmann/json.hpp>
 #include <string>

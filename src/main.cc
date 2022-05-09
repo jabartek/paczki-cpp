@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "bind/bind.h"
+#include "bind/stores.h"
 #include "colors.h"
 #include "graphics/box.h"
 #include "json_utils.h"
@@ -45,7 +46,7 @@ using JCamera = janowski::paczki_cpp::rendering::Camera;
 
 #ifdef EMSCRIPTEN
 
-#include "emscripten_wrapper.h"
+#include "lib/emscripten_wrapper.h"
 
 #endif
 
@@ -58,17 +59,16 @@ void alertMessage() {
   state_ptr->alert = {text, std::chrono::system_clock::now() + std::chrono::milliseconds(ms_display)};
 }
 
-#ifdef EMSCRIPTEN
-EMSCRIPTEN_BINDINGS(paczki_plusplus_alertMessage) { emscripten::function("alertMessage", &alertMessage); };
-#endif
-
 void selectPallet(std::string pallet_id){
     if (!state_ptr || !state_ptr->pallet_view) return;
     state_ptr->pallet_view->set_active_pallet(pallet_id);
 }
 
 #ifdef EMSCRIPTEN
+EMSCRIPTEN_BINDINGS(paczki_plusplus_alertMessage) { emscripten::function("alertMessage", &alertMessage); };
 EMSCRIPTEN_BINDINGS(paczki_plusplus_selectPallet) { emscripten::function("selectPallet", &selectPallet); };
+
+EMSCRIPTEN_BINDINGS(paczki_plusplus_addStore) { emscripten::function("addStore", &bind::addStore); };
 #endif
 
 

@@ -37,7 +37,6 @@ void setValue(const std::string& name, nlohmann::json json) {
   stores.at(name).call<void>("set", json_parsed);
 }
 
-EMSCRIPTEN_BINDINGS(paczki_plusplus) { emscripten::function("addStore", &addStore); };
 #else
 
 std::unordered_map<std::string, emscripten::val> stores = {};

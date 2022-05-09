@@ -14,7 +14,7 @@
 #include "pallet_viewer/state.h"
 
 #ifdef EMSCRIPTEN
-#include "emscripten_wrapper.h"
+#include "lib/emscripten_wrapper.h"
 #endif
 
 using namespace janowski::paczki_cpp::math;
@@ -29,37 +29,46 @@ void loadFile(const std::string& path, std::shared_ptr<pallet_viewer::State> sta
     file >> json;
     state_ptr->data = std::make_shared<schema::Data>(json);
   }
-  state_ptr->pallet_view.emplace(state_ptr->data, state_ptr);
+  auto& data = state_ptr->data;
+  state_ptr->pallet_view.emplace(data, state_ptr);
   if (auto& camera = state_ptr->camera) {
-    camera->set_target(state_ptr->data->dimensions() * 0.5f * graphics::kSizeMultiplier);
+    camera->set_target(data->dimensions() * 0.5f * graphics::kSizeMultiplier);
     camera->updateCamera();
   }
   state_ptr->color_map = schema::Data::ColorMap{};
-  for (auto& pallet : state_ptr->data->pallets()) {
-    for (auto& [id, box_pos] : state_ptr->data->box_positions(pallet)) {
+  for (auto& pallet : data->pallets()) {
+    for (auto& [id, box_pos] : data->box_positions(pallet)) {
       state_ptr->color_map->emplace(id, colors::kColors[rand() % colors::kColors.size()]);
     }
   }
-  #ifdef EMSCRIPTEN
-    // nlohmann::json sku_list;
-    // for (auto& sku : state_ptr->data->skus()) {
-    //   sku_list[sku.first] = sku.second.json();
-    // }
+#ifdef EMSCRIPTEN
+  nlohmann::json sku_list;
+  for (auto& sku : data->skus()) {
+    sku_list[sku.first] = sku.second.json();
+  }
+  bind::setValue("sku_list", sku_list);
 
-    // bind::setValue("setSkuList", sku_list);
+  auto pallet_id_list = nlohmann::json(data->pallets());
+  bind::setValue("pallet_id_list", pallet_id_list);
 
-    auto pallet_id_list = nlohmann::json(state_ptr->data->pallets());
-    bind::setValue("pallet_id_list", pallet_id_list);
+  nlohmann::json box_type_list;
+  for (auto& box_type : data->box_types()) {
+    box_type_list[box_type.first] = box_type.second.json();
+  }
+  bind::setValue("box_type_list", box_type_list);
 
-    nlohmann::json box_type_list;
-    for (auto& box_type : state_ptr->data->box_types()) {
-      box_type_list[box_type.first] = box_type.second.json();
+  nlohmann::json box_pos_list;
+  for (const auto& pallet : data->pallets()) {
+    box_pos_list[pallet] = {};
+    for (const auto& [id, position] : data->box_positions(pallet)) {
+      box_pos_list[pallet][id] = position.json();
     }
-    bind::setValue("box_type_list", box_type_list);
+  }
+  bind::setValue("box_pos_list", box_pos_list);
 
-    // auto set_box_type_list = emscripten::val::global("setBoxTypeList");
-    // auto set_box_type_list_result = set_box_type_list(box_type_list.dump());
-  #endif
+  // auto set_box_type_list = emscripten::val::global("setBoxTypeList");
+  // auto set_box_type_list_result = set_box_type_list(box_type_list.dump());
+#endif
 }
 }  // namespace
 

@@ -44,12 +44,18 @@ class PalletView : public Touchable {
   void set_active_pallet(const std::string& id);
   void set_active_pallet(std::size_t idx);
 
+  void addBox();
+  void removeBox();
+
   void advancePallet();
 
  private:
   void drawStandard();
   void drawExploded();  // debug
   void drawSelected();
+
+  void prepareLastVisible();
+  void clearLastVisible();
 
   std::optional<std::string> findBox(const Vector2& pos);
 
@@ -61,6 +67,7 @@ class PalletView : public Touchable {
   std::optional<std::string> active_pallet_;
   std::optional<std::string> selected_box_pos_;
   std::optional<std::string> selected_box_type_;
+  std::optional<std::size_t> last_visible_;
 
   std::optional<::Vector3> last_valid_pos_;
 };

@@ -30,6 +30,8 @@ jobs:
         path: |
           ${{github.workspace}}/build_emsdk/paczki_plusplus.wasm
           ${{github.workspace}}/build_emsdk/paczki_plusplus.js
+          ${{github.workspace}}/build_emsdk/packet_viewer.wasm
+          ${{github.workspace}}/build_emsdk/packet_viewer.js
           
   build_llvm_mingw:
     runs-on: self-hosted
@@ -73,7 +75,9 @@ jobs:
         mkdir paczki-svelte/src/external/ -p
         mkdir paczki-svelte/public/build/ -p
         cp wasm/paczki_plusplus.js paczki-svelte/src/external/
-        cp wasm/paczki_plusplus.wasm paczki-svelte/public/build/ 
+        cp wasm/paczki_plusplus.wasm paczki-svelte/public/build/
+        cp wasm/packet_viewer.js paczki-svelte/src/external/
+        cp wasm/packet_viewer.wasm paczki-svelte/public/build/
 
     - name: Install and build paczki-svelte
       run: |

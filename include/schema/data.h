@@ -13,12 +13,10 @@
 #include "schema/sku.h"
 
 namespace janowski::paczki_cpp::schema {
-
-constexpr auto kDefaultPalletName = "0";
 class Data {
  public:
   using BoxPositions = std::unordered_map<std::string, BoxPos>;
-  using BoxOrder = std::list<std::string>;
+  using BoxOrder = std::vector<std::string>;
   using BoxTypes = std::unordered_map<std::string, BoxType>;
   using Skus = std::unordered_map<std::string, Sku>;
   using ColorMap = std::unordered_map<std::string, Color>;
@@ -26,13 +24,16 @@ class Data {
 
   Data(nlohmann::json& json);
 
-  inline const BoxPositions& box_positions(const std::string& pallet) const { return pallets_.at(pallet); }
-  inline const BoxTypes& box_types() const { return box_types_; }
-  inline const Skus& skus() const { return skus_; }
-
   inline BoxPositions& box_positions(const std::string& pallet) { return pallets_.at(pallet); }
+  inline const BoxPositions& box_positions(const std::string& pallet) const { return pallets_.at(pallet); }
+
+  inline const BoxOrder& box_order(const std::string& pallet) const { return box_orders_.at(pallet); }
+
   inline BoxTypes& box_types() { return box_types_; }
+  inline const BoxTypes& box_types() const { return box_types_; }
+
   inline Skus& skus() { return skus_; }
+  inline const Skus& skus() const { return skus_; }
 
   inline ColorMap& type_to_color_map() { return typeToColorMap_; }
   inline ColorMap& pos_to_color_map() { return posToColorMap_; }

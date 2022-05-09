@@ -15,7 +15,7 @@
 
 #ifdef EMSCRIPTEN
 
-#include "emscripten_wrapper.h"
+#include "lib/emscripten_wrapper.h"
 
 // EM_JS(void, update_color, (), { document.getElementById("kolorek").style.backgroundColor = Paczka["color"]; });
 
@@ -219,6 +219,36 @@ void PalletView::advancePallet() {
   std::size_t idx = std::distance(pallet_ids.begin(), it);
   idx++;
   set_active_pallet(*std::next(pallet_ids.begin(), idx >= pallet_ids.size() ? 0 : idx));
+  prepareLastVisible();
+}
+
+void PalletView::prepareLastVisible() {
+  if (!active_pallet_) {
+    return;
+  }
+
+  const auto& order = data_->box_order(*active_pallet_);
+  if (order.empty()) {
+    return;
+  }
+  last_visible_ = data_->box_order(*active_pallet_).size() - 1;
+}
+
+void PalletView::clearLastVisible() {
+  last_visible_.reset();
+}
+
+
+void PalletView::addBox() {
+  if (!last_visible_) {
+    prepareLastVisible();
+  }
+}
+
+void PalletView::removeBox() {
+  if (!last_visible_) {
+    prepareLastVisible();
+  }
 }
 
 }  // namespace janowski::paczki_cpp::ui
