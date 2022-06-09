@@ -147,7 +147,7 @@ bool BoxPos::tryMove(::Vector3 delta, const std::string& pallet_id, std::optiona
     z_ += delta.z;
     return true;
   };
-  std::swap(delta.y, delta.z);
+  // std::swap(delta.y, delta.z);
   if (fun() && last_valid_pos) {
     *last_valid_pos = *last_valid_pos + delta * kSizeMultiplier;
   }

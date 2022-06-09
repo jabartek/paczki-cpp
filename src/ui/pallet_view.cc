@@ -189,16 +189,15 @@ void PalletView::leftPress(const Vector2& pos) {
 
   auto& selected_box_pos = box_postitions.at(*selected_box_pos_v);
   if (!last_valid_pos_) {
-    last_valid_pos_ = cursor_.position();
+    auto pre_cursor_pos = cursor_.position();
+    std::swap(pre_cursor_pos.y, pre_cursor_pos.z);
+    last_valid_pos_ = pre_cursor_pos;
   }
   cursor_.leftPress(pos);
-  auto cursor_delta = cursor_.position() - *last_valid_pos_;
-  std::cout << "CP: " << cursor_.position().x << " " << cursor_.position().y << " " << cursor_.position().z << "\n";
-  std::cout << "Cursor delta: " << cursor_delta.x << " " << cursor_delta.y << " " << cursor_delta.z << "\n";
-  std::cout << "LVP: " << last_valid_pos_->x << " " << last_valid_pos_->y << " " << last_valid_pos_->z << "\n";
+  auto cursor_pos = cursor_.position();
+  std::swap(cursor_pos.y, cursor_pos.z);
 
-  std::swap(cursor_delta.y, cursor_delta.z);
-  cursor_delta = cursor_delta * (1.f / graphics::kSizeMultiplier);
+  const auto cursor_delta = (cursor_pos - *last_valid_pos_) * (1.f / graphics::kSizeMultiplier);
 
   selected_box_pos.tryMove(cursor_delta, *active_pallet_, last_valid_pos_);
 }
