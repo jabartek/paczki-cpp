@@ -9,6 +9,7 @@
 #include "math/vector2.h"
 #include "pallet_viewer/state.h"
 #include "rendering/camera.h"
+#include "state_base.h"
 #include "ui/drawable.h"
 
 using namespace janowski::paczki_cpp::math;
@@ -22,7 +23,7 @@ constexpr unsigned kCircleSides = 36;
 
 class Rotator : public Touchable {
  public:
-  inline Rotator(Vector2 center, float radius, std::shared_ptr<pallet_viewer::State> state)
+  inline Rotator(Vector2 center, float radius, std::shared_ptr<StateBase> state)
       : Touchable(),
         center_(std::move(center)),
         radius_outer_(radius),
@@ -94,6 +95,6 @@ class Rotator : public Touchable {
   Vector2 center_;
   float radius_outer_;
   float radius_inner_;
-  std::shared_ptr<pallet_viewer::State> state_;
+  std::shared_ptr<StateBase> state_;
 };
 }  // namespace janowski::paczki_cpp::ui

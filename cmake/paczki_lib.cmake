@@ -5,14 +5,16 @@ if (EMSCRIPTEN)
     message("Using Emscripten.")
     add_compile_definitions(EMSCRIPTEN=1)
     set(CMAKE_EXECUTABLE_SUFFIX ".js")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fwasm-exceptions")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fwasm-exceptions")
 else()
     message("Using system compilers.")
 endif(EMSCRIPTEN)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wpedantic")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -O3  -Wall -Wextra -Wpedantic")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -O3  -Wall -Wextra -Wpedantic")
 
 include(FetchContent)
 FetchContent_Declare(json
@@ -69,7 +71,6 @@ set(PROJECT_SOURCES
     ${SOURCE_DIR}/json_utils.cc
 
     ${SOURCE_DIR}/bind/bind.cc
-    ${SOURCE_DIR}/bind/stores.cc
 
     ${SOURCE_DIR}/graphics/box.cc
 
@@ -105,6 +106,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 
 if (EMSCRIPTEN)
-target_link_options(${PROJECT_NAME} PRIVATE -sENVIRONMENT=web -sUSE_GLFW=3 -sASSERTIONS=1 -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sEXPORTED_RUNTIME_METHODS=['specialHTMLTargets','JSEvents','GL','callMain','abort'] -sNO_DISABLE_EXCEPTION_CATCHING)
+target_link_options(${PROJECT_NAME} PRIVATE -fwasm-exceptions -sENVIRONMENT=web -sUSE_GLFW=3 -sASSERTIONS=1 -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sEXPORTED_RUNTIME_METHODS=['specialHTMLTargets','JSEvents','GL','callMain','abort'] -sFORCE_FILESYSTEM=1)
 else()
 endif()

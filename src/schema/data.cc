@@ -1,5 +1,6 @@
 #include "schema/data.h"
 
+#include <filesystem>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
 #include <string_view>
@@ -18,7 +19,7 @@ class IncorrectDataException : public std::runtime_error {
   IncorrectDataException(std::string err = "") : std::runtime_error(err) {}
 };
 
-Data::Data(nlohmann::json& json) : raw_(json) {
+Data::Data(nlohmann::json& json) {
   for (auto& sku : json["SKUList"]) {
     if (!sku.contains("$id")) {
       continue;
@@ -38,8 +39,6 @@ Data::Data(nlohmann::json& json) : raw_(json) {
       auto id = new_box_pos.id();
       pallet.emplace(id, std::move(new_box_pos));
       order.emplace_back(id);
-      srand(std::hash<std::string_view>{}(id));  // debug
-      posToColorMap_.emplace(id, math::makeColor(rand(), rand(), rand()));
     };
     last_boxes_[id] = !order.empty() ? std::next(order.end(), -1) : order.end();
   }
@@ -47,25 +46,21 @@ Data::Data(nlohmann::json& json) : raw_(json) {
     if (!box_type.contains("$id")) {
       continue;
     }
-    BoxType new_box_type{box_type};
-    if (auto id = new_box_type.id(); id) {
-      box_types_.emplace(*id, std::move(new_box_type));
-      srand(std::hash<std::string>{}(*id));  // debug
-      typeToColorMap_.emplace(*id, math::makeColor(rand(), rand(), rand()));
+    BoxType new_box_type{box_type, this};
+    if (auto ref = new_box_type.ref(); ref) {
+      box_types_.emplace(*ref, std::move(new_box_type));
     }
   };
+
+  dimensions_ = {json["SizeX"].get<float>(), json["SizeZ"].get<float>(), json["SizeY"].get<float>()};
 
   if (pallet_ids_.empty()) {
     throw IncorrectDataException("Missing pallet data!");
   }
-  std::cout << "Załadowano " << pallet_ids_.size() << " palet!" << std::endl;
+  // rem_std::cout << "Załadowano " << pallet_ids_.size() << " palet!" << std::endl;
 }
 
-Data::Data(Data&& o)
-    : pallets_(std::move(o.pallets_)),
-      box_types_(std::move(o.box_types_)),
-      skus_(std::move(o.skus_)),
-      raw_(std::move(o.raw_)) {
+Data::Data(Data&& o) : pallets_(std::move(o.pallets_)), box_types_(std::move(o.box_types_)), skus_(std::move(o.skus_)) {
   for (auto& [id, pallet] : pallets_) {
     for (auto& [id, box_pos] : pallet) {
       box_pos.set_schema(this);
@@ -77,17 +72,45 @@ Data& Data::operator=(Data&& rhs) {
   pallets_ = std::move(rhs.pallets_);
   box_types_ = std::move(rhs.box_types_);
   skus_ = std::move(rhs.skus_);
-  raw_ = std::move(rhs.raw_);
-  for (auto& [id, pallet] : pallets_) {
-    for (auto& [id, box_pos] : pallet) {
+  for (auto& [pallet_id, pallet] : pallets_) {
+    for (auto& [box_pos_id, box_pos] : pallet) {
       box_pos.set_schema(this);
     }
   }
   return *this;
 }
 
-Vector3 Data::dimensions() const {
-  return {raw_["SizeX"].get<float>(), raw_["SizeZ"].get<float>(), raw_["SizeY"].get<float>()};
+void Data::takeBoxOff(const std::string& pallet_id, const std::string& box_pos_id) {
+  auto& pallet = box_positions(pallet_id);
+  auto box_pos = pallet.at(box_pos_id);
+  pallet.erase(box_pos_id);
+  box_pos_clipboard_.emplace(std::make_pair(box_pos_id, std::move(box_pos)));
 }
+
+void Data::putBoxOn(const std::string& pallet_id, const std::string& box_pos_id) {
+  auto& pallet = box_positions(pallet_id);
+  auto box_pos = box_pos_clipboard_.at(box_pos_id);
+  box_pos_clipboard_.erase(box_pos_id);
+  pallet.emplace(std::make_pair(box_pos_id, std::move(box_pos)));
+}
+
+void Data::dump() {
+  // rem_std::cout << "Data::dump()! \n";
+  nlohmann::json j{};
+  j["SKUList"] = {};
+  for (const auto& [id, sku] : skus_) {
+    j["SKUList"][id] = sku.json();
+  }
+#if EMSCRIPTEN
+  {
+    std::ofstream o("data.json");
+    // rem_std::cout << "o.is_open() " << o.is_open() << "\n";
+    o << j;
+  }
+  emscripten::val::global("window").call<void>("offerFileAsDownload", std::string("data.json"));
+#endif
+}
+
+Vector3 Data::dimensions() const { return dimensions_; }
 
 }  // namespace janowski::paczki_cpp::schema

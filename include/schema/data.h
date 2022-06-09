@@ -1,5 +1,8 @@
 #pragma once
 
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <list>
 #include <nlohmann/json.hpp>
 #include <string>
@@ -13,12 +16,21 @@
 #include "schema/sku.h"
 
 namespace janowski::paczki_cpp::schema {
-class Data {
+class DataBase {
+ public:
+  using Skus = std::unordered_map<std::string, Sku>;
+  using BoxTypes = std::unordered_map<std::string, BoxType>;
+  virtual const Skus& skus() const = 0;
+  virtual const BoxTypes& box_types() const = 0;
+  virtual ~DataBase() = default;
+};
+
+class Data : public DataBase {
  public:
   using BoxPositions = std::unordered_map<std::string, BoxPos>;
   using BoxOrder = std::vector<std::string>;
-  using BoxTypes = std::unordered_map<std::string, BoxType>;
-  using Skus = std::unordered_map<std::string, Sku>;
+  using Skus = DataBase::Skus;
+  using BoxTypes = DataBase::BoxTypes;
   using ColorMap = std::unordered_map<std::string, Color>;
   using Pallets = std::list<std::string>;
 
@@ -30,15 +42,18 @@ class Data {
   inline const BoxOrder& box_order(const std::string& pallet) const { return box_orders_.at(pallet); }
 
   inline BoxTypes& box_types() { return box_types_; }
-  inline const BoxTypes& box_types() const { return box_types_; }
+  inline const BoxTypes& box_types() const override { return box_types_; }
 
   inline Skus& skus() { return skus_; }
-  inline const Skus& skus() const { return skus_; }
-
-  inline ColorMap& type_to_color_map() { return typeToColorMap_; }
-  inline ColorMap& pos_to_color_map() { return posToColorMap_; }
+  inline const Skus& skus() const override { return skus_; }
 
   inline const Pallets& pallets() const { return pallet_ids_; }
+
+  void takeBoxOff(const std::string& pallet_id, const std::string& box_pos_id);
+  void putBoxOn(const std::string& pallet_id, const std::string& box_pos_id);
+  inline const BoxPositions box_pos_clipboard() const { return box_pos_clipboard_; }
+
+  void dump();
 
   Vector3 dimensions() const;
 
@@ -48,14 +63,14 @@ class Data {
  private:
   Pallets pallet_ids_;
   std::map<std::string, BoxPositions> pallets_;
+  BoxPositions box_pos_clipboard_;
   std::map<std::string, BoxOrder> box_orders_;
   std::map<std::string, BoxOrder::iterator> last_boxes_;
 
   BoxTypes box_types_;
   Skus skus_;
-  nlohmann::json raw_;
-  ColorMap typeToColorMap_;
-  ColorMap posToColorMap_;
-};
+
+  Vector3 dimensions_;
+};  // namespace janowski::paczki_cpp::schema
 
 }  // namespace janowski::paczki_cpp::schema

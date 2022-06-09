@@ -59,18 +59,14 @@ void alertMessage() {
   state_ptr->alert = {text, std::chrono::system_clock::now() + std::chrono::milliseconds(ms_display)};
 }
 
-void selectPallet(std::string pallet_id){
-    if (!state_ptr || !state_ptr->pallet_view) return;
-    state_ptr->pallet_view->set_active_pallet(pallet_id);
-}
-
 #ifdef EMSCRIPTEN
 EMSCRIPTEN_BINDINGS(paczki_plusplus_alertMessage) { emscripten::function("alertMessage", &alertMessage); };
-EMSCRIPTEN_BINDINGS(paczki_plusplus_selectPallet) { emscripten::function("selectPallet", &selectPallet); };
 
 EMSCRIPTEN_BINDINGS(paczki_plusplus_addStore) { emscripten::function("addStore", &bind::addStore); };
+EMSCRIPTEN_BINDINGS(paczki_plusplus_callUpdate) { emscripten::function("callUpdate", &bind::callUpdate); };
+EMSCRIPTEN_BINDINGS(paczki_plusplus_call) { emscripten::function("call", &bind::call); };
+EMSCRIPTEN_BINDINGS(paczki_plusplus_setGet) { emscripten::function("setGet", &bind::setGet); };
 #endif
-
 
 void mainLoop() {
   auto& state = *state_ptr;
@@ -109,7 +105,7 @@ void mainLoop() {
                 ((graphics::getPosition(box_pos) + graphics::getSize(box_pos, box_type)) * graphics::kSizeMultiplier)});
       if (cube_hit_info.hit && cube_hit_info.distance < collision.distance) {
         collision = cube_hit_info;
-        const auto& box_color = state_ptr->color_map ? state_ptr->color_map->at(box_pos.id()) : makeColor(0u, 0u, 0u);
+        const auto& box_color = box_pos.color();
         cursorColor = makeColor(box_color.r, box_color.g, box_color.b);
         hitObjectName = box_pos.id();
       }
@@ -123,7 +119,7 @@ void mainLoop() {
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
       left_button_lenght++;
       if (left_button_lenght > ui::kMaxClickLength) {
-        std::cout << "Left button pressed at " << mouse_pos.x << "," << mouse_pos.y << "\n";
+        // rem_std::cout << "Left button pressed at " << mouse_pos.x << "," << mouse_pos.y << "\n";
         for (auto& touchable : state.touchables) {
           if (!touchable->isOver(mouse_pos)) continue;
           touchable->leftPress(mouse_pos);
@@ -137,7 +133,7 @@ void mainLoop() {
     if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
       right_button_lenght++;
       if (right_button_lenght > ui::kMaxClickLength) {
-        std::cout << "Right button pressed at " << mouse_pos.x << "," << mouse_pos.y << "\n";
+        // rem_std::cout << "Right button pressed at " << mouse_pos.x << "," << mouse_pos.y << "\n";
         for (auto& touchable : state.touchables) {
           if (!touchable->isOver(mouse_pos)) continue;
           touchable->rightPress(mouse_pos);
@@ -146,7 +142,7 @@ void mainLoop() {
     }
     if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
       if (left_button_lenght <= ui::kMaxClickLength) {
-        std::cout << "Left button clicked at " << mouse_pos.x << "," << mouse_pos.y << "\n";
+        // rem_std::cout << "Left button clicked at " << mouse_pos.x << "," << mouse_pos.y << "\n";
         for (auto& touchable : state.touchables) {
           if (!touchable->isOver(mouse_pos)) continue;
           touchable->leftClick(mouse_pos);
@@ -168,7 +164,7 @@ void mainLoop() {
     }
     if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT)) {
       if (right_button_lenght <= ui::kMaxClickLength) {
-        std::cout << "Right button clicked at " << mouse_pos.x << "," << mouse_pos.y << "\n";
+        // rem_std::cout << "Right button clicked at " << mouse_pos.x << "," << mouse_pos.y << "\n";
         for (auto& touchable : state.touchables) {
           if (!touchable->isOver(mouse_pos)) continue;
           touchable->rightClick(mouse_pos);
@@ -208,12 +204,12 @@ void mainLoop() {
     if (!(hitObjectName == "Ground" || hitObjectName == "None") && state.pallet_view &&
         state.pallet_view->active_pallet()) {
       const auto& box_pos = state_ptr->data->box_positions(*state.pallet_view->active_pallet()).at(hitObjectName);
-      graphics::drawBoxOutline(*state_ptr->data, box_pos, state_ptr->color_map->at(hitObjectName));
+      graphics::drawBoxOutline(*state_ptr->data, box_pos, box_pos.color());
     }
 
     DrawRay(ray, MAROON);
 
-    DrawGrid(1000, 5.0f);
+    DrawGrid(1000, 2.0f);
 
     for (auto& touchable : state.touchables) {
       touchable->draw();
@@ -230,6 +226,7 @@ void mainLoop() {
         state.pallet_view->active_pallet()) {
       const auto& box_pos = state_ptr->data->box_positions(*state.pallet_view->active_pallet()).at(hitObjectName);
       DrawText(TextFormat("Box Id: %d", std::stoi(box_pos.id())), 10, ypos += 15, 10, BLACK);
+      DrawText(TextFormat("Box Type id: %s", box_pos.box_type_id().c_str()), 10, ypos += 15, 10, BLACK);
       DrawText(TextFormat("Items: %d", state_ptr->data->box_types().at(box_pos.box_type_id()).items().size()), 10,
                ypos += 15, 10, BLACK);
     }
@@ -266,24 +263,24 @@ void mainLoop() {
       EndDrawing();
       auto screenshot = LoadImageFromScreen();
       auto image_png = utils::toPngBase64(screenshot);
-      std::cout << image_png << "\n";
+      // rem_std::cout << image_png << "\n";
 
       UnloadImage(screenshot);
     }
     last_b = now;
     // skip_frame = true;
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - now);
-    std::cout << "Total time: " << elapsed.count() << "ms\n";
+    // rem_std::cout << "Total time: " << elapsed.count() << "ms\n";
   }
 }
 
 int main() {
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE bitor FLAG_VSYNC_HINT bitor FLAG_MSAA_4X_HINT);
   state_ptr = std::make_shared<State>();
   auto& state = *state_ptr;
-  state.window_width = 800;
-  state.window_height = 450;
+  state.window_width = 1200;
+  state.window_height = 800;
   InitWindow(state.window_width, state.window_height, "Paczki C++");
+  SetConfigFlags(FLAG_VSYNC_HINT bitor FLAG_MSAA_4X_HINT);
   state_ptr->handler_store.emplace(state_ptr);
   state.camera.emplace(::Vector3{0.f, 0.f, 0.f}, 50.f, 0.f, atanf(1), 45.f);
 

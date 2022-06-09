@@ -1,9 +1,8 @@
 #pragma once
 
-#include "lib/raylib_clean.h"
-
 #include <memory>
 
+#include "lib/raylib_clean.h"
 #include "math/vector3.h"
 
 namespace janowski::paczki_cpp::rendering {
@@ -82,11 +81,13 @@ class Camera {
     updateCamera();
   }
 
+
   ::Camera get() { return *camera_ptr_; }
 
   ::Camera operator*() { return get(); }
 
   inline void set_target(::Vector3 target) { target_ = std::move(target); }
+  inline void set_distance(float distance) { distance_ = distance; }
 
  private:
   std::shared_ptr<::Camera> camera_ptr_;

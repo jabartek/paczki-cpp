@@ -2,7 +2,10 @@
 
 #include <bind/bind.h>
 #include <raylib.h>
-
+//
+#include <algorithm>
+#include <utility>
+//
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -35,12 +38,6 @@ void loadFile(const std::string& path, std::shared_ptr<pallet_viewer::State> sta
     camera->set_target(data->dimensions() * 0.5f * graphics::kSizeMultiplier);
     camera->updateCamera();
   }
-  state_ptr->color_map = schema::Data::ColorMap{};
-  for (auto& pallet : data->pallets()) {
-    for (auto& [id, box_pos] : data->box_positions(pallet)) {
-      state_ptr->color_map->emplace(id, colors::kColors[rand() % colors::kColors.size()]);
-    }
-  }
 #ifdef EMSCRIPTEN
   nlohmann::json sku_list;
   for (auto& sku : data->skus()) {
@@ -48,7 +45,20 @@ void loadFile(const std::string& path, std::shared_ptr<pallet_viewer::State> sta
   }
   bind::setValue("sku_list", sku_list);
 
-  auto pallet_id_list = nlohmann::json(data->pallets());
+  auto pallets = data->pallets();
+  std::vector<std::pair<std::string, std::unordered_map<std::string, std::size_t>>> pallets_s;
+
+  for (const auto& pal : pallets) {
+    decltype(pallets_s)::value_type val;
+    val.first = pal;
+    const auto& box_pos_local = data->box_positions(pal);
+    for (const auto& pos : box_pos_local) {
+      val.second[pos.second.box_type_id()]++;
+    }
+    pallets_s.emplace_back(std::move(val));
+  }
+
+  auto pallet_id_list = nlohmann::json(pallets_s);
   bind::setValue("pallet_id_list", pallet_id_list);
 
   nlohmann::json box_type_list;
@@ -87,7 +97,7 @@ void HandlerStore::handleAll() {
 
 bool DropHandler::pred(std::shared_ptr<pallet_viewer::State> /*state_ptr*/) { return ::IsFileDropped(); }
 void DropHandler::func(std::shared_ptr<pallet_viewer::State> state_ptr) {
-  std::cout << "File dropped" << std::endl;
+  // rem_std::cout << "File dropped" << std::endl;
   int file_count{};
   auto file_names_ptr = GetDroppedFiles(&file_count);
   std::vector<std::string> file_names{};
@@ -130,8 +140,12 @@ void KeyboardHandler::func(std::shared_ptr<pallet_viewer::State> state_ptr) {
                                   : pallet_viewer::State::ColorScheme::kByBoxPos;
   }
   if (IsKeyReleased(KeyboardKey::KEY_P)) {
-    std::cout << "test.json opening" << std::endl;
+    // rem_std::cout << "test.json opening" << std::endl;
     loadFile("test.json", state_ptr);
+  }
+  if (IsKeyReleased(KeyboardKey::KEY_K)) {
+    if (!state_ptr->data) return;
+    state_ptr->data->dump();
   }
   if (IsKeyReleased(KeyboardKey::KEY_F)) {
     if (!state_ptr->pallet_view) return;

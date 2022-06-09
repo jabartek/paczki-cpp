@@ -3,11 +3,15 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
+#include "lib/raylib_clean.h"
+#include "math/color.h"
+
 namespace janowski::paczki_cpp::schema {
 class Sku {
  public:
-  Sku(std::string id, double size_x, double size_y, double size_z, double weight, double load_capacity,
-      double max_overhang, double max_overhang_x, double max_overhang_y, bool fragile_top, bool uneven_bottom);
+  Sku(std::string id, std::string ref, double size_x, double size_y, double size_z, double weight, double load_capacity,
+      double max_overhang, double max_overhang_x, double max_overhang_y, bool fragile_top, bool uneven_bottom,
+      unsigned char color_r, unsigned char color_g, unsigned char color_b);
 
   Sku(nlohmann::json& json);
 
@@ -24,9 +28,14 @@ class Sku {
   inline double max_overhang_y() const { return max_overhang_y_; }
   inline bool fragile_top() const { return fragile_top_; }
   inline bool uneven_bottom() const { return uneven_bottom_; }
+  inline unsigned char color_r() const { return color_r_; }
+  inline unsigned char color_g() const { return color_g_; }
+  inline unsigned char color_b() const { return color_b_; }
+  inline ::Color color() const { return math::makeColor(color_r_, color_g_, color_b_); }
 
  private:
   std::string id_;
+  std::string ref_;
   double size_x_;
   double size_y_;
   double size_z_;
@@ -37,5 +46,8 @@ class Sku {
   double max_overhang_y_;
   bool fragile_top_;
   bool uneven_bottom_;
+  unsigned char color_r_;
+  unsigned char color_g_;
+  unsigned char color_b_;
 };
 }  // namespace janowski::paczki_cpp::schema

@@ -52,8 +52,8 @@ class Cursor3D : public Touchable {
   Cube cube_z_;
   Cube cube_c_;
 
-  enum class LastCube { X, Y, Z, None = -1 };
-  LastCube last_cube_{LastCube::None};
+  enum class CursorCube { X, Y, Z, None = -1 };
+  CursorCube last_cube_{CursorCube::None};
   bool is_cursor_dragged_{false};
 
   void updateCubes();

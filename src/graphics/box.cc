@@ -1,9 +1,12 @@
 #include "graphics/box.h"
 
-#include "lib/raylib_clean.h"
+#include <iostream>
+#include <utility>
 
+#include "lib/raylib_clean.h"
 #include "math/color.h"
 #include "math/vector3.h"
+#include "raylib.h"
 #include "schema/box_pos.h"
 #include "schema/box_type.h"
 #include "schema/data.h"
@@ -12,7 +15,7 @@
 namespace janowski::paczki_cpp::graphics {
 using namespace math;
 
-void drawBox(const schema::Data& /*data*/, const schema::BoxPos& box_pos, const schema::BoxType& box_type,
+void drawBox(const schema::DataBase& /*data*/, const schema::BoxPos& box_pos, const schema::BoxType& box_type,
              const Color& color) {
   auto size = getSize(box_pos, box_type);
   auto position = getPosition(box_pos) + (size * 0.5f);
@@ -21,8 +24,8 @@ void drawBox(const schema::Data& /*data*/, const schema::BoxPos& box_pos, const 
   DrawCube(position, size.x, size.y, size.z, color);
 }
 
-void drawBoxExploded(const schema::Data& /*data*/, const schema::BoxPos& box_pos, const schema::BoxType& box_type,
-                     const Color& color, const Vector3& center, float ratio) { //debug
+void drawBoxExploded(const schema::DataBase& /*data*/, const schema::BoxPos& box_pos, const schema::BoxType& box_type,
+                     const Color& color, const Vector3& center, float ratio) {  // debug
   auto size = getSize(box_pos, box_type);
   auto position = getPosition(box_pos) + (size * 0.5f);
   auto offset = position - center;
@@ -33,7 +36,7 @@ void drawBoxExploded(const schema::Data& /*data*/, const schema::BoxPos& box_pos
   DrawCube(position, size.x, size.y, size.z, color);
 }
 
-void drawBoxItems(const schema::Data& data, const schema::BoxPos& box_pos, const schema::BoxType& box_type,
+void drawBoxItems(const schema::DataBase& data, const schema::BoxPos& box_pos, const schema::BoxType& box_type,
                   const Color& color) {
   for (auto& item : box_type.items()) {
     auto& sku = data.skus().at(item.sku_id);
@@ -41,12 +44,29 @@ void drawBoxItems(const schema::Data& data, const schema::BoxPos& box_pos, const
     auto position = getItemPosition(box_pos, item) + (size * 0.5f);
     size = size * kSizeMultiplier;
     position = position * kSizeMultiplier;
-    size = size + -0.05f;
-    DrawCubeWires(position, size.x, size.y, size.z, color);
+    // size = size * .99f;
+    DrawCube(position, size.x, size.y, size.z, Color{sku.color_r(), sku.color_g(), sku.color_b(), 255u});
+    size = size * 1.01f;
+    DrawCubeWires(position, size.x, size.y, size.z,
+                  Color{(unsigned char)(255u - sku.color_r()), (unsigned char)(255u - sku.color_g()),
+                        (unsigned char)(255u - sku.color_b()), 255u});
   }
 }
 
-void drawBoxOutline(const schema::Data& data, const schema::BoxPos& box_pos, const Color& color,
+// void drawBoxItems(const schema::DataBase& data, const schema::BoxPos& box_pos, const schema::BoxType& box_type,
+//                   const Color& color) {
+//   for (auto& item : box_type.items()) {
+//     auto& sku = data.skus().at(item.sku_id);
+//     auto size = getItemSize(box_pos, item, sku);
+//     auto position = getItemPosition(box_pos, item) + (size * 0.5f);
+//     size = size * kSizeMultiplier;
+//     position = position * kSizeMultiplier;
+//     size = size * 0.98f;
+//     DrawCubeWires(position, size.x, size.y, size.z, color);
+//   }
+// }
+
+void drawBoxOutline(const schema::DataBase& data, const schema::BoxPos& box_pos, const Color& color,
                     bool invert /* = true */) {
   const auto& box_def = data.box_types().at(box_pos.box_type_id());
 
@@ -86,18 +106,28 @@ Vector3 getItemPosition(const schema::BoxPos& box_pos, const schema::BoxType::It
   return box_position + item_position;
 }
 
-bool checkCollision(BoundingBox box1, BoundingBox box2)
-{
-    bool collision = true;
+std::pair<float, float> checkCollision(BoundingBox box1, BoundingBox box2, Axis move_axis) {
+  std::pair<float, float> move = std::make_pair(0.f, 0.f);
 
-    if ((box1.max.x > box2.min.x) && (box1.min.x < box2.max.x))
-    {
-        if ((box1.max.y <= box2.min.y) || (box1.min.y >= box2.max.y)) collision = false;
-        if ((box1.max.z <= box2.min.z) || (box1.min.z >= box2.max.z)) collision = false;
-    }
-    else collision = false;
+  if ((box1.max.x <= box2.min.x) || (box1.min.x >= box2.max.x)) return move;
+  if ((box1.max.y <= box2.min.y) || (box1.min.y >= box2.max.y)) return move;
+  if ((box1.max.z <= box2.min.z) || (box1.min.z >= box2.max.z)) return move;
 
-    return collision;
+  switch (move_axis) {
+    case Axis::X:
+      return std::make_pair(box1.min.x - box2.max.x, box1.max.x - box2.min.x);
+
+    case Axis::Y:
+      return std::make_pair(box1.min.y - box2.max.y, box1.max.y - box2.min.y);
+
+    case Axis::Z:
+      return std::make_pair(box1.min.z - box2.max.z, box1.max.z - box2.min.z);
+
+    default:
+      break;
+  }
+
+  return move;
 }
 
 }  // namespace janowski::paczki_cpp::graphics

@@ -1,9 +1,15 @@
 #include "ui/pallet_view.h"
 
+#include <iostream>  // debug
 #include <limits>
 #include <memory>
+#include <optional>
 #include <sstream>
+#include <stdexcept>
+#include <string>
+#include <variant>
 
+#include "bind/stores.h"
 #include "graphics/box.h"
 #include "lib/raylib_clean.h"
 #include "math/vector3.h"
@@ -27,12 +33,53 @@ namespace janowski::paczki_cpp::ui {
 PalletView::PalletView(std::shared_ptr<schema::Data> data, std::shared_ptr<pallet_viewer::State> state)
     : Touchable(), cursor_(state_) {
   set_data(data, state);
+#ifdef EMSCRIPTEN
+  bind::registerFunction("removeBox", [this]() -> void { this->removeBox(); });
+  bind::registerFunction("addBox", [this]() -> void { this->addBox(); });
+  bind::registerFunction("resetBoxOrderPreview", [this]() -> void { this->clearLastVisible(); });
+  bind::registerFunction("selectBoxTypeFromBoxPos", [this]() -> void { this->selectBoxTypeFromBoxPos(); });
+
+  bind::subscribe("active_box_type", [this]() {
+    auto id_val = bind::getFrom("active_box_type");
+    if (!id_val.isString()) {
+      this->unselectBoxType(true);
+      return;
+    }
+    try {
+      this->selectBoxType(id_val.as<std::string>(), true);
+    } catch (...) {
+      // todo alert
+    }
+  });
+  bind::subscribe("selected_pallet", [this]() {
+    auto id_val = bind::getFrom("selected_pallet");
+    try {
+      this->set_active_pallet(id_val.as<std::string>(), true);
+    } catch (...) {
+      // todo alert
+    }
+  });
+  bind::subscribe("box_pos_order_it", [this]() {
+    auto val = bind::getFrom("box_pos_order_it");
+    try {
+      auto it = val.as<int>();
+      if (it < 0) {
+        last_visible_.reset();
+      } else {
+        const int order_len = data_->box_order(*active_pallet_).size();
+        last_visible_ = it >= order_len ? order_len - 1 : it;
+      }
+    } catch (...) {
+      // todo alert
+    }
+  });
+#endif
 }
 void PalletView::set_data(std::shared_ptr<schema::Data> data, std::shared_ptr<pallet_viewer::State> state) {
   data_ = data;
   state_ = state;
   if (!data_->pallets().empty()) {
-    active_pallet_ = data_->pallets().front();
+    set_active_pallet(data_->pallets().front());
   }
 }
 
@@ -40,13 +87,15 @@ schema::Data* PalletView::data() { return data_.get(); }
 
 void PalletView::draw() {
   if (!state_) return;
-  if (!selected_box_pos_ && !selected_box_type_) {
+  if (!selected_ && !last_visible_) {
     drawStandard();
     // drawExploded(frame);  // debug
-  } else {
+  } else if (selected_) {
     drawSelected();
+  } else {
+    drawVisible();
   }
-  if (selected_box_pos_) {
+  if (selected_box_pos()) {
     cursor_.draw();
   }
 }
@@ -55,9 +104,26 @@ void PalletView::drawStandard() {
   if (!data_ || !state_ || !active_pallet_) return;
   for (const auto& [id, cube] : data_->box_positions(*active_pallet_)) {
     auto color = state_->color_scheme == pallet_viewer::State::ColorScheme::kByBoxPos
-                     ? data_->pos_to_color_map()[id]
-                     : data_->type_to_color_map()[cube.box_type_id()];
-    if (state_->hoverBoxPos && id == *state_->hoverBoxPos) {
+                     ? cube.color()
+                     : data_->box_types().at(cube.box_type_id()).color();
+    if (hover_box_pos_ && id == *hover_box_pos_) {
+      graphics::drawBoxItems(*data_, cube, data_->box_types().at(cube.box_type_id()),
+                             Color{color.r, color.g, color.b, 100u});
+    } else {
+      graphics::drawBox(*data_, cube, data_->box_types().at(cube.box_type_id()), color);
+    }
+  }
+}
+
+void PalletView::drawVisible() {
+  if (!data_ || !state_ || !active_pallet_ || !last_visible_) return;
+  for (std::size_t i = 0; i <= *last_visible_; ++i) {
+    const auto& id = data_->box_order(*active_pallet_)[i];
+    const auto& cube = data_->box_positions(*active_pallet_).at(id);
+    auto color = state_->color_scheme == pallet_viewer::State::ColorScheme::kByBoxPos
+                     ? cube.color()
+                     : data_->box_types().at(cube.box_type_id()).color();
+    if (hover_box_pos_ && id == *hover_box_pos_) {
       graphics::drawBoxItems(*data_, cube, data_->box_types().at(cube.box_type_id()),
                              Color{color.r, color.g, color.b, 100u});
     } else {
@@ -70,9 +136,9 @@ void PalletView::drawExploded() {  // debug
   if (!data_ || !state_ || !active_pallet_) return;
   for (const auto& [id, cube] : data_->box_positions(*active_pallet_)) {
     auto color = state_->color_scheme == pallet_viewer::State::ColorScheme::kByBoxPos
-                     ? data_->pos_to_color_map()[id]
-                     : data_->type_to_color_map()[cube.box_type_id()];
-    if (state_->hoverBoxPos && id == *state_->hoverBoxPos) {
+                     ? cube.color()
+                     : data_->box_types().at(cube.box_type_id()).color();
+    if (hover_box_pos_ && id == *hover_box_pos_) {
       graphics::drawBoxItems(*data_, cube, data_->box_types().at(cube.box_type_id()),
                              Color{color.r, color.g, color.b, 100u});
     } else {
@@ -85,10 +151,11 @@ void PalletView::drawSelected() {
   if (!data_ || !state_ || !active_pallet_) return;
   for (const auto& [id, cube] : data_->box_positions(*active_pallet_)) {
     auto color = state_->color_scheme == pallet_viewer::State::ColorScheme::kByBoxPos
-                     ? data_->pos_to_color_map()[id]
-                     : data_->type_to_color_map()[cube.box_type_id()];
-    if ((selected_box_pos_ && *selected_box_pos_ == id) ||
-        (selected_box_type_ && *selected_box_type_ == cube.box_type_id())) {
+                     ? cube.color()
+                     : data_->box_types().at(cube.box_type_id()).color();
+    if (auto selected_box_pos_v = selected_box_pos(), selected_box_type_v = selected_box_type();
+        (selected_box_pos_v && *selected_box_pos_v == id) ||
+        (selected_box_type_v && *selected_box_type_v == cube.box_type_id())) {
       graphics::drawBox(*data_, cube, data_->box_types().at(cube.box_type_id()), color);
     } else {
       graphics::drawBoxOutline(*data_, cube, color, false);
@@ -116,27 +183,32 @@ std::optional<std::string> PalletView::findBox(const Vector2& pos) {
 }
 
 void PalletView::leftPress(const Vector2& pos) {
-  if (!selected_box_pos_) return;
+  auto selected_box_pos_v = selected_box_pos();
+  if (!selected_box_pos_v) return;
   auto& box_postitions = state_->data->box_positions(*active_pallet_);
 
-  auto& selected_box_pos = box_postitions.at(*selected_box_pos_);
+  auto& selected_box_pos = box_postitions.at(*selected_box_pos_v);
   if (!last_valid_pos_) {
     last_valid_pos_ = cursor_.position();
   }
   cursor_.leftPress(pos);
   auto cursor_delta = cursor_.position() - *last_valid_pos_;
+  std::cout << "CP: " << cursor_.position().x << " " << cursor_.position().y << " " << cursor_.position().z << "\n";
+  std::cout << "Cursor delta: " << cursor_delta.x << " " << cursor_delta.y << " " << cursor_delta.z << "\n";
+  std::cout << "LVP: " << last_valid_pos_->x << " " << last_valid_pos_->y << " " << last_valid_pos_->z << "\n";
+
   std::swap(cursor_delta.y, cursor_delta.z);
   cursor_delta = cursor_delta * (1.f / graphics::kSizeMultiplier);
-  if (selected_box_pos.tryMove(cursor_delta, *active_pallet_)) {
-    last_valid_pos_ = cursor_.position();
-  }
+
+  selected_box_pos.tryMove(cursor_delta, *active_pallet_, last_valid_pos_);
 }
 
 void PalletView::leftRelease(const Vector2& pos) {
-  if (!last_valid_pos_ || !selected_box_pos_ || !active_pallet_) return;
+  auto selected_box_pos_v = selected_box_pos();
+  if (!last_valid_pos_ || !selected_box_pos_v || !active_pallet_) return;
   last_valid_pos_ = std::nullopt;
 
-  auto& box_pos = state_->data->box_positions(*active_pallet_).at(*selected_box_pos_);
+  auto& box_pos = state_->data->box_positions(*active_pallet_).at(*selected_box_pos_v);
   auto& box_type = state_->data->box_types().at(box_pos.box_type_id());
   auto size = graphics::getSize(box_pos, box_type);
   ::Vector3 cursor_pos =
@@ -155,61 +227,118 @@ void PalletView::leftClick(const Vector2& pos) {
     ::Vector3 cursor_pos =
         (graphics::getPosition(box_pos) + size * 0.5f + ::Vector3{0.f, size.y, 0.f} * 0.5f) * graphics::kSizeMultiplier;
     cursor_ = ui::Cursor3D(state_, 1.5f, cursor_pos);
-    std::cout << cursor_pos.x << "\t" << cursor_pos.y << "\t" << cursor_pos.z << "\n";
+    // rem_std::cout << cursor_pos.x << "\t" << cursor_pos.y << "\t" << cursor_pos.z << "\n";
   }
 }
 
 void PalletView::rightClick(const Vector2& pos) {
+  auto selected_box_pos_v = selected_box_pos();
   auto box_id = findBox(pos);
-  if (box_id && selected_box_pos_ && *box_id == *selected_box_pos_) {
+  if (box_id && selected_box_pos_v && *box_id == *selected_box_pos_v) {
     unselectBoxPos();
   }
 }
 
-std::optional<std::string> PalletView::selected_box_pos() const { return selected_box_pos_; }
-void PalletView::selectBoxPos(std::string id) {
+std::optional<std::string> PalletView::selected_box_pos() const {
+  return (selected_ && std::holds_alternative<BoxPosSelection>(*selected_))
+             ? std::make_optional(std::get<BoxPosSelection>(*selected_))
+             : std::nullopt;
+}
+void PalletView::selectBoxPos(std::string id, bool from_callback) {
   if (!data_ || !active_pallet_) return;
   const auto& box_positions = data_->box_positions(*active_pallet_);
   if (box_positions.contains(id)) {
-    selected_box_pos_ = id;
-    bind::setValue("active_packet", nlohmann::json{id});
+    unselectBoxType(from_callback);
+    unselectSku(from_callback);
+    selected_ = BoxPosSelection{id};
+    if (!from_callback) bind::setValue("active_packet", nlohmann::json{id});
   }
 }
-void PalletView::unselectBoxPos() {
-  selected_box_pos_ = std::nullopt;
-  bind::setValue("active_packet", nlohmann::json{});
+void PalletView::unselectBoxPos(bool from_callback) {
+  if (selected_ && std::holds_alternative<BoxPosSelection>(*selected_)) selected_ = std::nullopt;
+  if (!from_callback) bind::setValue("active_packet", nlohmann::json{});
 }
 
-std::optional<std::string> PalletView::selected_box_type() const { return selected_box_type_; }
-void PalletView::selectBoxType(std::string id) {
-  if (!data_ || !active_pallet_) return;
-  const auto& box_types = data_->box_positions(*active_pallet_);
+std::optional<std::string> PalletView::selected_box_type() const {
+  return (selected_ && std::holds_alternative<BoxTypeSelection>(*selected_))
+             ? std::make_optional(std::get<BoxTypeSelection>(*selected_))
+             : std::nullopt;
+}
+void PalletView::selectBoxType(std::string id, bool from_callback) {
+  if (!data_) return;
+  const auto& box_types = data_->box_types();
   if (box_types.contains(id)) {
-    selected_box_type_ = id;
-    bind::setValue("active_box_type", nlohmann::json{id});
+    unselectBoxPos(from_callback);
+    unselectSku(from_callback);
+    selected_ = BoxTypeSelection{id};
+    if (!from_callback) bind::setValue("active_box_type", emscripten::val{id});
+  } else {
+    // rem_std::cout << "PalletView::selectBoxType: No box with id: " << id << "\n";
   }
 }
-void PalletView::unselectBoxType() {
-  selected_box_pos_ = std::nullopt;
-  bind::setValue("active_box_type", nlohmann::json{});
+void PalletView::unselectBoxType(bool from_callback) {
+  if (selected_ && !std::holds_alternative<BoxTypeSelection>(*selected_)) selected_ = std::nullopt;
+  if (!from_callback) bind::setValue("active_box_type", nlohmann::json{});
+}
+
+void PalletView::selectBoxTypeFromBoxPos() {
+  if (selected_ && std::holds_alternative<BoxPosSelection>(*selected_)) {
+    try {
+      const auto box_type =
+          data_->box_positions(*active_pallet_).at(std::get<BoxPosSelection>(*selected_)).box_type_id();
+      selectBoxType(box_type);
+    } catch (...) {
+      // rem_std::cout << "Could not select BoxType from BoxPos!\n";
+    }
+  }
+}
+
+std::optional<std::string> PalletView::selected_sku() const {
+  return (selected_ && std::holds_alternative<SkuSelection>(*selected_))
+             ? std::make_optional(std::get<SkuSelection>(*selected_))
+             : std::nullopt;
+}
+void PalletView::selectSku(std::string id, bool from_callback) {
+  if (!data_) return;
+  const auto& skus = data_->skus();
+  if (skus.contains(id)) {
+    unselectBoxPos(from_callback);
+    unselectBoxType(from_callback);
+    selected_ = SkuSelection{id};
+    if (!from_callback) bind::setValue("active_sku", nlohmann::json{id});
+  }
+}
+void PalletView::unselectSku(bool from_callback) {
+  if (selected_ && !std::holds_alternative<SkuSelection>(*selected_)) selected_ = std::nullopt;
+  if (!from_callback) bind::setValue("active_sku", nlohmann::json{});
 }
 
 std::optional<std::string> PalletView::active_pallet() const { return active_pallet_; }
 
-void PalletView::set_active_pallet(const std::string& id) {
+void PalletView::set_active_pallet(const std::string& id, bool from_callback) {
   if (!data_) return;
   const auto& pallet_ids = data_->pallets();
   if (std::find(pallet_ids.begin(), pallet_ids.end(), id) == pallet_ids.end()) {
     throw std::runtime_error("`Data::set_active_pallet` - Invalid pallet id: " + id);
   }
-  selected_box_pos_ = std::nullopt;
+  if (!from_callback) bind::setValue("selected_pallet", emscripten::val(id));
+  selected_.reset();
+  clearLastVisible();
+#ifdef EMSCRIPTEN
+  bind::setValue("active_packet", emscripten::val::null());
+  bind::setValue("active_box_type", emscripten::val::null());
+  bind::setValue("active_sku", emscripten::val::null());
+  const auto j = nlohmann::json{data_->box_order(id)};
+  // rem_std::cout << "\n1\n2\n3\n5\nBoxOrder"<< j << "\n1\n2\n3";
+  bind::setValue("box_pos_order", j);
+#endif
   active_pallet_ = id;
 }
 
-void PalletView::set_active_pallet(std::size_t idx) {
+void PalletView::set_active_pallet(std::size_t idx, bool from_callback) {
   if (!data_) return;
   const auto& pallet_ids = data_->pallets();
-  set_active_pallet(*std::next(pallet_ids.begin(), idx));
+  set_active_pallet(*std::next(pallet_ids.begin(), idx), from_callback);
 }
 
 void PalletView::advancePallet() {
@@ -236,18 +365,24 @@ void PalletView::prepareLastVisible() {
 
 void PalletView::clearLastVisible() {
   last_visible_.reset();
+  bind::setValue("box_order_it", emscripten::val{-1});
 }
-
 
 void PalletView::addBox() {
   if (!last_visible_) {
     prepareLastVisible();
+  }
+  if (last_visible_ && *last_visible_ < data_->box_order(*active_pallet_).size() - 1) {
+    (*last_visible_)++;
   }
 }
 
 void PalletView::removeBox() {
   if (!last_visible_) {
     prepareLastVisible();
+  }
+  if (last_visible_ && *last_visible_ > 0) {
+    (*last_visible_)--;
   }
 }
 
