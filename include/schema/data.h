@@ -49,8 +49,10 @@ class Data : public DataBase {
 
   inline const Pallets& pallets() const { return pallet_ids_; }
 
+  ::Vector3 palletEnd(const std::string& pallet_id);
   void takeBoxOff(const std::string& pallet_id, const std::string& box_pos_id);
   void putBoxOn(const std::string& pallet_id, const std::string& box_pos_id);
+  void setClipboardBoxY(const std::string& box_pos_id, float y);
   inline const BoxPositions box_pos_clipboard() const { return box_pos_clipboard_; }
 
   void dump();

@@ -38,6 +38,23 @@ PalletView::PalletView(std::shared_ptr<schema::Data> data, std::shared_ptr<palle
   bind::registerFunction("addBox", [this]() -> void { this->addBox(); });
   bind::registerFunction("resetBoxOrderPreview", [this]() -> void { this->clearLastVisible(); });
   bind::registerFunction("selectBoxTypeFromBoxPos", [this]() -> void { this->selectBoxTypeFromBoxPos(); });
+  bind::registerFunction("takeBoxOff", [this]() -> void {
+    try {
+      std::string box_id = std::get<BoxPosSelection>(*selected_);
+      unselectBoxPos();
+      this->takeBoxOff(box_id);
+    } catch (...) {
+      // todo alert js
+    }
+  });
+  bind::registerFunction("putBoxOn", [this](emscripten::val id_val) -> void {
+    try {
+      std::string box_id = id_val.as<std::string>();
+      this->putBoxOn(box_id);
+    } catch (...) {
+      // todo alert js
+    }
+  });
 
   bind::subscribe("active_box_type", [this]() {
     auto id_val = bind::getFrom("active_box_type");
@@ -73,6 +90,14 @@ PalletView::PalletView(std::shared_ptr<schema::Data> data, std::shared_ptr<palle
       // todo alert
     }
   });
+  bind::subscribe("color_by_box_pos", [this]() {
+    auto val = bind::getFrom("color_by_box_pos");
+    try {
+      state_->set_color_scheme(val.as<bool>() ? StateBase::ColorScheme::kByBoxPos : StateBase::ColorScheme::kByBoxType);
+    } catch (...) {
+      std::cout << "bind::subscribe(\"color_by_box_pos\")\n";
+    }
+  });
 #endif
 }
 void PalletView::set_data(std::shared_ptr<schema::Data> data, std::shared_ptr<pallet_viewer::State> state) {
@@ -81,6 +106,7 @@ void PalletView::set_data(std::shared_ptr<schema::Data> data, std::shared_ptr<pa
   if (!data_->pallets().empty()) {
     set_active_pallet(data_->pallets().front());
   }
+  updatePalletIdList();
 }
 
 schema::Data* PalletView::data() { return data_.get(); }
@@ -103,7 +129,7 @@ void PalletView::draw() {
 void PalletView::drawStandard() {
   if (!data_ || !state_ || !active_pallet_) return;
   for (const auto& [id, cube] : data_->box_positions(*active_pallet_)) {
-    auto color = state_->color_scheme == pallet_viewer::State::ColorScheme::kByBoxPos
+    auto color = state_->color_scheme() == pallet_viewer::State::ColorScheme::kByBoxPos
                      ? cube.color()
                      : data_->box_types().at(cube.box_type_id()).color();
     if (hover_box_pos_ && id == *hover_box_pos_) {
@@ -117,10 +143,11 @@ void PalletView::drawStandard() {
 
 void PalletView::drawVisible() {
   if (!data_ || !state_ || !active_pallet_ || !last_visible_) return;
-  for (std::size_t i = 0; i <= *last_visible_; ++i) {
-    const auto& id = data_->box_order(*active_pallet_)[i];
+  const auto& box_order = data_->box_order(*active_pallet_);
+  for (std::size_t i = 0; i <= *last_visible_ && i < box_order.size(); ++i) {
+    const auto& id = box_order[i];
     const auto& cube = data_->box_positions(*active_pallet_).at(id);
-    auto color = state_->color_scheme == pallet_viewer::State::ColorScheme::kByBoxPos
+    auto color = state_->color_scheme() == pallet_viewer::State::ColorScheme::kByBoxPos
                      ? cube.color()
                      : data_->box_types().at(cube.box_type_id()).color();
     if (hover_box_pos_ && id == *hover_box_pos_) {
@@ -135,7 +162,7 @@ void PalletView::drawVisible() {
 void PalletView::drawExploded() {  // debug
   if (!data_ || !state_ || !active_pallet_) return;
   for (const auto& [id, cube] : data_->box_positions(*active_pallet_)) {
-    auto color = state_->color_scheme == pallet_viewer::State::ColorScheme::kByBoxPos
+    auto color = state_->color_scheme() == pallet_viewer::State::ColorScheme::kByBoxPos
                      ? cube.color()
                      : data_->box_types().at(cube.box_type_id()).color();
     if (hover_box_pos_ && id == *hover_box_pos_) {
@@ -150,7 +177,7 @@ void PalletView::drawExploded() {  // debug
 void PalletView::drawSelected() {
   if (!data_ || !state_ || !active_pallet_) return;
   for (const auto& [id, cube] : data_->box_positions(*active_pallet_)) {
-    auto color = state_->color_scheme == pallet_viewer::State::ColorScheme::kByBoxPos
+    auto color = state_->color_scheme() == pallet_viewer::State::ColorScheme::kByBoxPos
                      ? cube.color()
                      : data_->box_types().at(cube.box_type_id()).color();
     if (auto selected_box_pos_v = selected_box_pos(), selected_box_type_v = selected_box_type();
@@ -364,7 +391,7 @@ void PalletView::prepareLastVisible() {
 
 void PalletView::clearLastVisible() {
   last_visible_.reset();
-  bind::setValue("box_order_it", emscripten::val{-1});
+  bind::setValue("box_pos_order_it", emscripten::val{-1});
 }
 
 void PalletView::addBox() {
@@ -383,6 +410,42 @@ void PalletView::removeBox() {
   if (last_visible_ && *last_visible_ > 0) {
     (*last_visible_)--;
   }
+}
+
+void PalletView::takeBoxOff(const std::string& box_pos_id) {
+  if (!active_pallet_ || !data_) return;
+  data_->takeBoxOff(*active_pallet_, box_pos_id);
+  bind::setValue("box_clipboard", nlohmann::json{data_->box_pos_clipboard()});
+  const auto j = nlohmann::json{data_->box_order(*active_pallet_)};
+  bind::setValue("box_pos_order", j);
+  updatePalletIdList();
+}
+void PalletView::putBoxOn(const std::string& box_pos_id) {
+  if (!active_pallet_) return;
+  data_->putBoxOn(*active_pallet_, box_pos_id);
+  bind::setValue("box_clipboard", nlohmann::json{data_->box_pos_clipboard()});
+  const auto j = nlohmann::json{data_->box_order(*active_pallet_)};
+  bind::setValue("box_pos_order", j);
+  updatePalletIdList();
+}
+
+void PalletView::updatePalletIdList() {
+  if (!data_) return;
+  auto pallets = data_->pallets();
+  std::vector<std::pair<std::string, std::unordered_map<std::string, std::size_t>>> pallets_s;
+
+  for (const auto& pal : pallets) {
+    decltype(pallets_s)::value_type val;
+    val.first = pal;
+    const auto& box_pos_local = data_->box_positions(pal);
+    for (const auto& pos : box_pos_local) {
+      val.second[pos.second.box_type_id()]++;
+    }
+    pallets_s.emplace_back(std::move(val));
+  }
+
+  auto pallet_id_list = nlohmann::json(pallets_s);
+  bind::setValue("pallet_id_list", pallet_id_list);
 }
 
 }  // namespace janowski::paczki_cpp::ui

@@ -75,27 +75,19 @@ const Sku* BoxPos::sku() const {
 
 nlohmann::json BoxPos::json() const {
   nlohmann::json data;
-  data["coordinates"] = {};
-  auto& coordinates = data["coordinates"];
-  coordinates["x"] = x_;
-  coordinates["y"] = y_;
-  coordinates["z"] = z_;
-  if (!schema_) {
-    return data;
+  data["$id"] = ref_;
+  if (box_type()) {
+    data["Item1"] = nlohmann::json{*box_type()};
   }
-  data["size"] = {};
-  auto& size = data["size"];
-  const auto box_type = schema_->box_types().find(box_type_id_);
-  if (box_type != schema_->box_types().end()) {
-    size["x"] = box_type->second.size_x();
-    size["y"] = box_type->second.size_y();
-    size["z"] = box_type->second.size_z();
-  }
+  data["Item2"] = {};
+  data["Item2"]["X"] = x_;
+  data["Item2"]["Y"] = y_;
+  data["Item2"]["Z"] = z_;
   return data;
 }
 
-bool BoxPos::tryMove(::Vector3 delta, const std::string& pallet_id, std::optional<::Vector3>& last_valid_pos) {
-  auto fun = [&]() {
+void BoxPos::tryMove(::Vector3 delta, const std::string& pallet_id, std::optional<::Vector3>& last_valid_pos) {
+  auto isMoved = [&]() {
     auto new_box_pos = *this;
     new_box_pos.x_ += delta.x;
     new_box_pos.y_ += delta.y;
@@ -147,11 +139,9 @@ bool BoxPos::tryMove(::Vector3 delta, const std::string& pallet_id, std::optiona
     z_ += delta.z;
     return true;
   };
-  // std::swap(delta.y, delta.z);
-  if (fun() && last_valid_pos) {
+  if (isMoved() && last_valid_pos) {
     *last_valid_pos = *last_valid_pos + delta * kSizeMultiplier;
   }
-  return true;
 }
 
 std::optional<BoundingBox> BoxPos::bounding_box() const {
@@ -163,5 +153,7 @@ std::optional<BoundingBox> BoxPos::bounding_box() const {
   auto size = graphics::getSize(*this, *box_type_ptr);
   return BoundingBox{position, position + size};
 }
+
+void to_json(nlohmann::json& j, const BoxPos& box_pos) { j = box_pos.json(); }
 
 }  // namespace janowski::paczki_cpp::schema

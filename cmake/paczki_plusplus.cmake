@@ -4,8 +4,8 @@ project(paczki_plusplus CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3  -Wall -Wextra -Wpedantic")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3  -Wall -Wextra -Wpedantic")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g  -Wall -Wextra -Wpedantic")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g  -Wall -Wextra -Wpedantic")
 
 if (EMSCRIPTEN)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fwasm-exceptions")
@@ -14,8 +14,12 @@ else()
     message("Using system compilers.")
 endif(EMSCRIPTEN)
 
-add_executable(${PROJECT_NAME} ../src/main.cc
-   ../src/bind/stores.cc)
+set(SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../src/)
+
+add_executable(${PROJECT_NAME}
+   ${SOURCE_DIR}/main.cc
+   ${SOURCE_DIR}/bind/stores.cc
+)
 
 
 if (EMSCRIPTEN)

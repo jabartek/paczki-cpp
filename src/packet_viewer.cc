@@ -67,8 +67,8 @@ int main() {
   state->window_height = 800;
   state->camera.emplace(::Vector3{0.f, 0.f, 0.f}, 50.f, 0.f, atanf(1), 45.f);
   state->createObjects();
-  InitWindow(state->window_width, state->window_height, "Packet Viewer");
   SetConfigFlags(FLAG_VSYNC_HINT bitor FLAG_MSAA_4X_HINT);
+  InitWindow(state->window_width, state->window_height, "Packet Viewer");
 
   emscripten_set_main_loop(mainLoop, 0, 1);
 

@@ -45,22 +45,6 @@ void loadFile(const std::string& path, std::shared_ptr<pallet_viewer::State> sta
   }
   bind::setValue("sku_list", sku_list);
 
-  auto pallets = data->pallets();
-  std::vector<std::pair<std::string, std::unordered_map<std::string, std::size_t>>> pallets_s;
-
-  for (const auto& pal : pallets) {
-    decltype(pallets_s)::value_type val;
-    val.first = pal;
-    const auto& box_pos_local = data->box_positions(pal);
-    for (const auto& pos : box_pos_local) {
-      val.second[pos.second.box_type_id()]++;
-    }
-    pallets_s.emplace_back(std::move(val));
-  }
-
-  auto pallet_id_list = nlohmann::json(pallets_s);
-  bind::setValue("pallet_id_list", pallet_id_list);
-
   nlohmann::json box_type_list;
   for (auto& box_type : data->box_types()) {
     box_type_list[box_type.first] = box_type.second.json();
@@ -135,9 +119,9 @@ void KeyboardHandler::func(std::shared_ptr<pallet_viewer::State> state_ptr) {
     camera.zoom(JCamera::Zoom::OUT);
   }
   if (IsKeyReleased(KeyboardKey::KEY_Z)) {
-    state_ptr->color_scheme = state_ptr->color_scheme == pallet_viewer::State::ColorScheme::kByBoxPos
-                                  ? pallet_viewer::State::ColorScheme::kByBoxType
-                                  : pallet_viewer::State::ColorScheme::kByBoxPos;
+    state_ptr->set_color_scheme(state_ptr->color_scheme() == pallet_viewer::State::ColorScheme::kByBoxPos
+                                    ? pallet_viewer::State::ColorScheme::kByBoxType
+                                    : pallet_viewer::State::ColorScheme::kByBoxPos);
   }
   if (IsKeyReleased(KeyboardKey::KEY_P)) {
     // rem_std::cout << "test.json opening" << std::endl;

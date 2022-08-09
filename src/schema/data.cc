@@ -1,5 +1,6 @@
 #include "schema/data.h"
 
+#include <algorithm>
 #include <filesystem>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
@@ -10,7 +11,12 @@
 #include <iostream>
 /**/
 
+#include "graphics/box.h"
 #include "math/color.h"
+#include "math/vector3.h"
+#include "schema/box_pos.h"
+
+using namespace janowski::paczki_cpp::math;
 
 namespace janowski::paczki_cpp::schema {
 
@@ -79,11 +85,29 @@ Data& Data::operator=(Data&& rhs) {
   }
   return *this;
 }
+::Vector3 Data::palletEnd(const std::string& pallet_id) {
+  auto& pallet = box_positions(pallet_id);
+  ::Vector3 max{0.f, 0.f, 0.f};
+  for (const auto& [id, pos] : pallet) {
+    const auto box_end = graphics::getPosition(pos) + graphics::getSize(pos, *pos.box_type());
+    if (const auto end_x = box_end.x; end_x > max.x) {
+      max.x = end_x;
+    }
+    if (const auto end_y = box_end.x; end_y > max.y) {
+      max.y = end_y;
+    }
+    if (const auto end_z = box_end.z; end_z > max.z) {
+      max.z = end_z;
+    }
+  }
+  return max;
+}
 
 void Data::takeBoxOff(const std::string& pallet_id, const std::string& box_pos_id) {
   auto& pallet = box_positions(pallet_id);
   auto box_pos = pallet.at(box_pos_id);
   pallet.erase(box_pos_id);
+  box_orders_[pallet_id].erase(std::find(box_orders_[pallet_id].begin(), box_orders_[pallet_id].end(), box_pos_id));
   box_pos_clipboard_.emplace(std::make_pair(box_pos_id, std::move(box_pos)));
 }
 
@@ -91,8 +115,16 @@ void Data::putBoxOn(const std::string& pallet_id, const std::string& box_pos_id)
   auto& pallet = box_positions(pallet_id);
   auto box_pos = box_pos_clipboard_.at(box_pos_id);
   box_pos_clipboard_.erase(box_pos_id);
+  const auto pallet_end = palletEnd(pallet_id);
+  box_pos.set_z(pallet_end.z);
   pallet.emplace(std::make_pair(box_pos_id, std::move(box_pos)));
+  box_orders_[pallet_id].push_back(box_pos_id);
 }
+
+// void Data::setClipboardBoxY(const std::string& box_pos_id, float y){
+//     auto& box_pos = box_pos_clipboard_.at(box_pos_id);
+//     box_pos.
+// }
 
 void Data::dump() {
   // rem_std::cout << "Data::dump()! \n";
@@ -101,13 +133,13 @@ void Data::dump() {
   for (const auto& [id, sku] : skus_) {
     j["SKUList"][id] = sku.json();
   }
-#if EMSCRIPTEN
   {
     std::ofstream o("data.json");
     // rem_std::cout << "o.is_open() " << o.is_open() << "\n";
     o << j;
   }
-  emscripten::val::global("window").call<void>("offerFileAsDownload", std::string("data.json"));
+#if EMSCRIPTEN
+  emscripten::val::global("window").call<void>("offerDownload", std::string("data.json"));
 #endif
 }
 

@@ -27,6 +27,8 @@ class State : public StateBase {
   std::optional<Alert> alert;
   bool skip_frame{false};
 
+  void set_color_scheme(ColorScheme color_scheme) override;
+
   void update();
 };
 }  // namespace janowski::paczki_cpp::pallet_viewer

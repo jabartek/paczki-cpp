@@ -55,7 +55,12 @@ class PalletView : public Touchable {
   void addBox();
   void removeBox();
 
+  void takeBoxOff(const std::string& box_pos_id);
+  void putBoxOn(const std::string& box_pos_id);
+
   void advancePallet();
+
+  void updatePalletIdList();
 
  private:
   void drawStandard();

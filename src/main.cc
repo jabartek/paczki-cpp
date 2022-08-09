@@ -233,13 +233,14 @@ void mainLoop() {
 
     ypos += 150;
 
-    DrawText(TextFormat("Distance: %3.2f", collision.distance), 10, ypos, 10, BLACK);
+    // DrawText(TextFormat("Distance: %3.2f", collision.distance), 10, ypos, 10, BLACK);
 
-    DrawText(TextFormat("Hit Pos: %3.2f %3.2f %3.2f", collision.point.x, collision.point.y, collision.point.z), 10,
-             ypos + 15, 10, BLACK);
+    // DrawText(TextFormat("Hit Pos: %3.2f %3.2f %3.2f", collision.point.x, collision.point.y, collision.point.z), 10,
+    //          ypos + 15, 10, BLACK);
 
-    DrawText(TextFormat("Hit Norm: %3.2f %3.2f %3.2f", collision.normal.x, collision.normal.y, collision.normal.z), 10,
-             ypos + 30, 10, BLACK);
+    // DrawText(TextFormat("Hit Norm: %3.2f %3.2f %3.2f", collision.normal.x, collision.normal.y, collision.normal.z),
+    // 10,
+    //          ypos + 30, 10, BLACK);
   }
 
   // DrawFPS(10, 10);
@@ -279,8 +280,8 @@ int main() {
   auto& state = *state_ptr;
   state.window_width = 1200;
   state.window_height = 800;
-  InitWindow(state.window_width, state.window_height, "Paczki C++");
   SetConfigFlags(FLAG_VSYNC_HINT bitor FLAG_MSAA_4X_HINT);
+  InitWindow(state.window_width, state.window_height, "Paczki C++");
   state_ptr->handler_store.emplace(state_ptr);
   state.camera.emplace(::Vector3{0.f, 0.f, 0.f}, 50.f, 0.f, atanf(1), 45.f);
 
