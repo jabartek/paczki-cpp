@@ -59,14 +59,17 @@ jobs:
         name: windows
         path: |
           ${{github.workspace}}/build_llvm_mingw/paczki_plusplus.exe
+          ${{github.workspace}}/build_llvm_mingw/paczki_tests.exe
 
   tests:
+    needs: [build_emscripten, build_llvm_mingw]
     runs-on: self-hosted
 
+    steps:
     - uses: actions/checkout@v3
     
     - name: Download Emscripten tests
-      uses: download-artifact@v3
+      uses: actions/download-artifact@v3
       with:
         name: wasm-tests
         path: |
