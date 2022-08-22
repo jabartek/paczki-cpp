@@ -6,8 +6,10 @@
 
 namespace janowski::paczki_cpp::pallet_viewer {
 State::State() {
+#ifdef EMSCRIPTEN
   bind::registerFunction("offerDownload", [this] { offerDownload(); });
   bind::registerFunction("loadFile", [this](emscripten::val path) { this->file_to_load = path.as<std::string>(); });
+#endif
 }
 
 void State::set_color_scheme(ColorScheme color_scheme) {

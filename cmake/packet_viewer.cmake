@@ -10,7 +10,6 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -Wextra -Wpedantic")
 
 
 add_executable(${PROJECT_NAME} ../src/packet_viewer.cc
-   ../src/bind/stores.cc
    ../src/packet_viewer/state.cc
    )
 

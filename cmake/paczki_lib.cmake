@@ -71,12 +71,11 @@ set(PROJECT_SOURCES
     ${SOURCE_DIR}/json_utils.cc
 
     ${SOURCE_DIR}/bind/bind.cc
+    ${SOURCE_DIR}/bind/stores.cc
 
     ${SOURCE_DIR}/graphics/box.cc
 
     ${SOURCE_DIR}/lib/raymath_implementation.cc
-
-    ${SOURCE_DIR}/pallet_viewer/state.cc
 
     ${SOURCE_DIR}/rendering/mode_3d.cc
 

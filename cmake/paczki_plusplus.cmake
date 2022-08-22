@@ -18,7 +18,7 @@ set(SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../src/)
 
 add_executable(${PROJECT_NAME}
    ${SOURCE_DIR}/main.cc
-   ${SOURCE_DIR}/bind/stores.cc
+   ${SOURCE_DIR}/pallet_viewer/state.cc
 )
 
 
