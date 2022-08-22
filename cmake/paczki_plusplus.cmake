@@ -25,7 +25,7 @@ add_executable(${PROJECT_NAME}
 if (EMSCRIPTEN)
 target_link_libraries(${PROJECT_NAME} PRIVATE paczki_lib embind)
 target_link_options(${PROJECT_NAME} PRIVATE -sEXPORT_NAME=${PROJECT_NAME})
-target_link_options(${PROJECT_NAME} PRIVATE -fwasm-exceptions -sENVIRONMENT=web -sUSE_GLFW=3 -sASSERTIONS=1 -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sMODULARIZE=1 -sEXPORTED_RUNTIME_METHODS=['specialHTMLTargets','JSEvents','GL','callMain','abort'] -sFORCE_FILESYSTEM=1)
+target_link_options(${PROJECT_NAME} PRIVATE -fwasm-exceptions -sENVIRONMENT=web -sUSE_GLFW=3 -sASSERTIONS=1 -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sMODULARIZE=1 -sEXPORTED_RUNTIME_METHODS=['specialHTMLTargets','JSEvents','GL','callMain','abort','FS'] -sFORCE_FILESYSTEM=1 -sEXIT_RUNTIME=1)
 else()
 target_link_libraries(${PROJECT_NAME} PRIVATE paczki_lib)
 endif()

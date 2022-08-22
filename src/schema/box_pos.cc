@@ -74,15 +74,16 @@ const Sku* BoxPos::sku() const {
 }
 
 nlohmann::json BoxPos::json() const {
-  nlohmann::json data;
+  nlohmann::json data{};
   data["$id"] = ref_;
   if (box_type()) {
-    data["Item1"] = nlohmann::json{*box_type()};
+    data["Item1"] = *box_type();
   }
   data["Item2"] = {};
   data["Item2"]["X"] = x_;
   data["Item2"]["Y"] = y_;
   data["Item2"]["Z"] = z_;
+  data["Item2"]["Rotated"] = rotated_;
   return data;
 }
 

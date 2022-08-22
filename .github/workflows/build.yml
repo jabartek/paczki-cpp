@@ -32,6 +32,14 @@ jobs:
           ${{github.workspace}}/build_emsdk/paczki_plusplus.js
           ${{github.workspace}}/build_emsdk/packet_viewer.wasm
           ${{github.workspace}}/build_emsdk/packet_viewer.js
+            
+    - name: Upload Emscripten tests
+      uses: actions/upload-artifact@v3
+      with:
+        name: wasm-tests
+        path: |
+          ${{github.workspace}}/build_emsdk/paczki_tests.wasm
+          ${{github.workspace}}/build_emsdk/paczki_tests.js
           
   build_llvm_mingw:
     runs-on: self-hosted
@@ -52,9 +60,24 @@ jobs:
         path: |
           ${{github.workspace}}/build_llvm_mingw/paczki_plusplus.exe
 
+  tests:
+    runs-on: self-hosted
+
+    - uses: actions/checkout@v3
+    
+    - name: Download Emscripten tests
+      uses: download-artifact@v3
+      with:
+        name: wasm-tests
+        path: |
+          ${{github.workspace}}/tests
+
+    - name: Run tests
+      run: node --experimental-wasm-eh ${{github.workspace}}/tests/paczki_tests.js assets/
+
   deploy_webpage:
     runs-on: self-hosted
-    needs: [build_emscripten, build_llvm_mingw]
+    needs: [tests]
 
     steps:
     - name: Checkout paczki-svelte repo

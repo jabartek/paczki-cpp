@@ -126,21 +126,34 @@ void Data::putBoxOn(const std::string& pallet_id, const std::string& box_pos_id)
 //     box_pos.
 // }
 
-void Data::dump() {
+nlohmann::json Data::dump() {
   // rem_std::cout << "Data::dump()! \n";
   nlohmann::json j{};
   j["SKUList"] = {};
   for (const auto& [id, sku] : skus_) {
     j["SKUList"][id] = sku.json();
   }
-  {
-    std::ofstream o("data.json");
-    // rem_std::cout << "o.is_open() " << o.is_open() << "\n";
-    o << j;
+  j["BoxTypes"] = nlohmann::json::array();
+  for (const auto& [id, box_type] : box_types_) {
+    j["BoxTypes"].emplace_back(box_type);
   }
-#if EMSCRIPTEN
-  emscripten::val::global("window").call<void>("offerDownload", std::string("data.json"));
-#endif
+  j["Pallets"] = nlohmann::json::array();
+  for (const auto& [pallet_id, box_positions] : pallets_) {
+    nlohmann::json pallet_json{};
+    pallet_json["$id"] = pallet_id;
+    pallet_json["BoxPos"] = nlohmann::json::array();
+    for (const auto& position : box_positions) {
+      nlohmann::json position_json = position;
+      position_json = position_json[1];
+      std::cout << position_json.dump(2) << std::endl;
+      pallet_json["BoxPos"].emplace_back(std::move(position_json));
+    }
+    j["Pallets"].emplace_back(std::move(pallet_json));
+  }
+  j["SizeX"] = dimensions_.x;
+  j["SizeY"] = dimensions_.y;
+  j["SizeZ"] = dimensions_.z;
+  return j;
 }
 
 Vector3 Data::dimensions() const { return dimensions_; }

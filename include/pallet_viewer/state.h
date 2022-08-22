@@ -26,9 +26,14 @@ class State : public StateBase {
   std::optional<ui::PalletView> pallet_view;
   std::optional<Alert> alert;
   bool skip_frame{false};
+  std::optional<std::string> file_to_load{};
+
+  State();
 
   void set_color_scheme(ColorScheme color_scheme) override;
 
   void update();
+
+  void offerDownload();
 };
 }  // namespace janowski::paczki_cpp::pallet_viewer

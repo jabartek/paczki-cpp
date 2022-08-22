@@ -55,7 +55,7 @@ class Data : public DataBase {
   void setClipboardBoxY(const std::string& box_pos_id, float y);
   inline const BoxPositions box_pos_clipboard() const { return box_pos_clipboard_; }
 
-  void dump();
+  nlohmann::json dump();
 
   Vector3 dimensions() const;
 

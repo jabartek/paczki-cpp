@@ -4,6 +4,8 @@
 #include <raylib.h>
 //
 #include <algorithm>
+#include <filesystem>
+#include <optional>
 #include <utility>
 //
 #include <fstream>
@@ -79,18 +81,25 @@ void HandlerStore::handleAll() {
   }
 }
 
-bool DropHandler::pred(std::shared_ptr<pallet_viewer::State> /*state_ptr*/) { return ::IsFileDropped(); }
+bool DropHandler::pred(std::shared_ptr<pallet_viewer::State> state_ptr) {
+  return ::IsFileDropped() || (state_ptr && state_ptr->file_to_load);
+}
 void DropHandler::func(std::shared_ptr<pallet_viewer::State> state_ptr) {
-  // rem_std::cout << "File dropped" << std::endl;
-  int file_count{};
-  auto file_names_ptr = GetDroppedFiles(&file_count);
-  std::vector<std::string> file_names{};
-  for (auto i = 0; i < file_count; ++i) {
-    file_names.emplace_back(file_names_ptr[i]);
-  }
-  ClearDroppedFiles();
+  if (!state_ptr) return;
+  std::optional<std::string> file_to_load{};
+  if (::IsFileDropped()) {
+    int file_count{};
+    auto file_names_ptr = GetDroppedFiles(&file_count);
 
-  loadFile(file_names.front(), state_ptr);
+    if (file_count > 0) file_to_load = file_names_ptr[0];
+    ClearDroppedFiles();
+  } else if (state_ptr->file_to_load) {
+    file_to_load = state_ptr->file_to_load;
+    state_ptr->file_to_load.reset();
+  }
+  if (file_to_load) {
+    loadFile(*file_to_load, state_ptr);
+  }
 }
 
 bool KeyboardHandler::pred(std::shared_ptr<pallet_viewer::State> /*state_ptr*/) { return true; }
@@ -128,8 +137,7 @@ void KeyboardHandler::func(std::shared_ptr<pallet_viewer::State> state_ptr) {
     loadFile("test.json", state_ptr);
   }
   if (IsKeyReleased(KeyboardKey::KEY_K)) {
-    if (!state_ptr->data) return;
-    state_ptr->data->dump();
+    if (state_ptr) state_ptr->offerDownload();
   }
   if (IsKeyReleased(KeyboardKey::KEY_F)) {
     if (!state_ptr->pallet_view) return;
@@ -148,6 +156,15 @@ void KeyboardHandler::func(std::shared_ptr<pallet_viewer::State> state_ptr) {
       bind::setValue("active_packet", nlohmann::json({"hello", "ello"}));
     } catch (...) {
     }
+  }
+
+  if (IsKeyReleased(KeyboardKey::KEY_X)) {
+#ifdef EMSCRIPTEN
+    emscripten::val::global("window").call<void>("showAlert", std::string("Aplikacja niespodziewanie zamknięta :("),
+                                                 true);
+#else
+    std::exit(-1);
+#endif
   }
 }
 

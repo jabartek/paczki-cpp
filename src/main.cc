@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <initializer_list>
@@ -69,209 +70,218 @@ EMSCRIPTEN_BINDINGS(paczki_plusplus_setGet) { emscripten::function("setGet", &bi
 #endif
 
 void mainLoop() {
-  auto& state = *state_ptr;
-  if (state.skip_frame) return;
-  auto& skip_frame = state.skip_frame;
-  auto& handlers = state.handler_store;
-  JCamera& camera = *state.camera;
-  ::SetWindowSize(state.window_width, state.window_height);
-  handlers->handleAll();
-  skip_frame = false;
-  // UpdateCamera(&camera);
+  try {
+    auto& state = *state_ptr;
+    if (state.skip_frame) return;
+    auto& skip_frame = state.skip_frame;
+    auto& handlers = state.handler_store;
+    JCamera& camera = *state.camera;
+    ::SetWindowSize(state.window_width, state.window_height);
+    handlers->handleAll();
+    skip_frame = false;
+    // UpdateCamera(&camera);
 
-  RayCollision collision{};
-  std::string hitObjectName("None");
-  collision.distance = std::numeric_limits<float>::max();
-  collision.hit = false;
-  Color cursorColor = WHITE;
+    RayCollision collision{};
+    std::string hitObjectName("None");
+    collision.distance = std::numeric_limits<float>::max();
+    collision.hit = false;
+    Color cursorColor = WHITE;
 
-  auto ray = GetMouseRay(GetMousePosition(), *camera);
+    auto ray = GetMouseRay(GetMousePosition(), *camera);
 
-  RayCollision groundHitInfo =
-      GetRayCollisionQuad(ray, {.x = -50.f, .y = 0.f, .z = -50.f}, {.x = 50.f, .y = 0.f, .z = -50.f},
-                          {.x = 50.f, .y = 0.f, .z = 50.f}, {.x = -50.f, .y = 0.f, .z = 50.f});
+    RayCollision groundHitInfo =
+        GetRayCollisionQuad(ray, {.x = -50.f, .y = 0.f, .z = -50.f}, {.x = 50.f, .y = 0.f, .z = -50.f},
+                            {.x = 50.f, .y = 0.f, .z = 50.f}, {.x = -50.f, .y = 0.f, .z = 50.f});
 
-  if ((groundHitInfo.hit) && (groundHitInfo.distance < collision.distance)) {
-    collision = groundHitInfo;
-    cursorColor = GREEN;
-    hitObjectName = "Ground";
-  }
-
-  if (auto& data = state_ptr->data; data && state.pallet_view && state.pallet_view->active_pallet()) {
-    for (auto& [id, box_pos] : data->box_positions(*state.pallet_view->active_pallet())) {
-      auto& box_type = data->box_types().at(box_pos.box_type_id());
-      RayCollision cube_hit_info = GetRayCollisionBox(
-          ray, {(graphics::getPosition(box_pos) * graphics::kSizeMultiplier),
-                ((graphics::getPosition(box_pos) + graphics::getSize(box_pos, box_type)) * graphics::kSizeMultiplier)});
-      if (cube_hit_info.hit && cube_hit_info.distance < collision.distance) {
-        collision = cube_hit_info;
-        const auto& box_color = box_pos.color();
-        cursorColor = makeColor(box_color.r, box_color.g, box_color.b);
-        hitObjectName = box_pos.id();
-      }
+    if ((groundHitInfo.hit) && (groundHitInfo.distance < collision.distance)) {
+      collision = groundHitInfo;
+      cursorColor = GREEN;
+      hitObjectName = "Ground";
     }
-  }
 
-  {
-    static int left_button_lenght{0};
-    static int right_button_lenght{0};
-    auto mouse_pos = GetMousePosition();
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-      left_button_lenght++;
-      if (left_button_lenght > ui::kMaxClickLength) {
-        // rem_std::cout << "Left button pressed at " << mouse_pos.x << "," << mouse_pos.y << "\n";
-        for (auto& touchable : state.touchables) {
-          if (!touchable->isOver(mouse_pos)) continue;
-          touchable->leftPress(mouse_pos);
-        }
-
-        if (state.pallet_view) {
-          state.pallet_view->leftPress(mouse_pos);
+    if (auto& data = state_ptr->data; data && state.pallet_view && state.pallet_view->active_pallet()) {
+      for (auto& [id, box_pos] : data->box_positions(*state.pallet_view->active_pallet())) {
+        auto& box_type = data->box_types().at(box_pos.box_type_id());
+        RayCollision cube_hit_info = GetRayCollisionBox(
+            ray,
+            {(graphics::getPosition(box_pos) * graphics::kSizeMultiplier),
+             ((graphics::getPosition(box_pos) + graphics::getSize(box_pos, box_type)) * graphics::kSizeMultiplier)});
+        if (cube_hit_info.hit && cube_hit_info.distance < collision.distance) {
+          collision = cube_hit_info;
+          const auto& box_color = box_pos.color();
+          cursorColor = makeColor(box_color.r, box_color.g, box_color.b);
+          hitObjectName = box_pos.id();
         }
       }
     }
-    if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-      right_button_lenght++;
-      if (right_button_lenght > ui::kMaxClickLength) {
-        // rem_std::cout << "Right button pressed at " << mouse_pos.x << "," << mouse_pos.y << "\n";
-        for (auto& touchable : state.touchables) {
-          if (!touchable->isOver(mouse_pos)) continue;
-          touchable->rightPress(mouse_pos);
-        }
-      }
-    }
-    if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
-      if (left_button_lenght <= ui::kMaxClickLength) {
-        // rem_std::cout << "Left button clicked at " << mouse_pos.x << "," << mouse_pos.y << "\n";
-        for (auto& touchable : state.touchables) {
-          if (!touchable->isOver(mouse_pos)) continue;
-          touchable->leftClick(mouse_pos);
-        }
 
-        if (state.pallet_view) {
-          state.pallet_view->leftClick(mouse_pos);
-        }
-      } else {
-        for (auto& touchable : state.touchables) {
-          if (!touchable->isOver(mouse_pos)) continue;
-          touchable->leftRelease(mouse_pos);
-        }
-        if (state.pallet_view) {
-          state.pallet_view->leftRelease(mouse_pos);
-        }
-      }
-      left_button_lenght = 0;
-    }
-    if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT)) {
-      if (right_button_lenght <= ui::kMaxClickLength) {
-        // rem_std::cout << "Right button clicked at " << mouse_pos.x << "," << mouse_pos.y << "\n";
-        for (auto& touchable : state.touchables) {
-          if (!touchable->isOver(mouse_pos)) continue;
-          touchable->rightClick(mouse_pos);
-        }
-        if (state.pallet_view) {
-          state.pallet_view->rightClick(mouse_pos);
-        }
-      } else {
-        for (auto& touchable : state.touchables) {
-          if (!touchable->isOver(mouse_pos)) continue;
-          touchable->rightRelease(mouse_pos);
-        }
-        if (state.pallet_view) {
-          state.pallet_view->rightRelease(mouse_pos);
-        }
-      }
-      right_button_lenght = 0;
-    }
-    for (auto& touchable : state.touchables) {
-      if (!touchable->isOver(mouse_pos)) continue;
-      touchable->hover(mouse_pos);
-    }
-  }
-  BeginDrawing();
-  ClearBackground(RAYWHITE);
-  {
-    rendering::Mode3D frame(&camera);
+    {
+      static int left_button_lenght{0};
+      static int right_button_lenght{0};
+      auto mouse_pos = GetMousePosition();
+      if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+        left_button_lenght++;
+        if (left_button_lenght > ui::kMaxClickLength) {
+          // rem_std::cout << "Left button pressed at " << mouse_pos.x << "," << mouse_pos.y << "\n";
+          for (auto& touchable : state.touchables) {
+            if (!touchable->isOver(mouse_pos)) continue;
+            touchable->leftPress(mouse_pos);
+          }
 
-    if (state.pallet_view) state.pallet_view->draw();
+          if (state.pallet_view) {
+            state.pallet_view->leftPress(mouse_pos);
+          }
+        }
+      }
+      if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+        right_button_lenght++;
+        if (right_button_lenght > ui::kMaxClickLength) {
+          // rem_std::cout << "Right button pressed at " << mouse_pos.x << "," << mouse_pos.y << "\n";
+          for (auto& touchable : state.touchables) {
+            if (!touchable->isOver(mouse_pos)) continue;
+            touchable->rightPress(mouse_pos);
+          }
+        }
+      }
+      if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+        if (left_button_lenght <= ui::kMaxClickLength) {
+          // rem_std::cout << "Left button clicked at " << mouse_pos.x << "," << mouse_pos.y << "\n";
+          for (auto& touchable : state.touchables) {
+            if (!touchable->isOver(mouse_pos)) continue;
+            touchable->leftClick(mouse_pos);
+          }
+
+          if (state.pallet_view) {
+            state.pallet_view->leftClick(mouse_pos);
+          }
+        } else {
+          for (auto& touchable : state.touchables) {
+            if (!touchable->isOver(mouse_pos)) continue;
+            touchable->leftRelease(mouse_pos);
+          }
+          if (state.pallet_view) {
+            state.pallet_view->leftRelease(mouse_pos);
+          }
+        }
+        left_button_lenght = 0;
+      }
+      if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT)) {
+        if (right_button_lenght <= ui::kMaxClickLength) {
+          // rem_std::cout << "Right button clicked at " << mouse_pos.x << "," << mouse_pos.y << "\n";
+          for (auto& touchable : state.touchables) {
+            if (!touchable->isOver(mouse_pos)) continue;
+            touchable->rightClick(mouse_pos);
+          }
+          if (state.pallet_view) {
+            state.pallet_view->rightClick(mouse_pos);
+          }
+        } else {
+          for (auto& touchable : state.touchables) {
+            if (!touchable->isOver(mouse_pos)) continue;
+            touchable->rightRelease(mouse_pos);
+          }
+          if (state.pallet_view) {
+            state.pallet_view->rightRelease(mouse_pos);
+          }
+        }
+        right_button_lenght = 0;
+      }
+      for (auto& touchable : state.touchables) {
+        if (!touchable->isOver(mouse_pos)) continue;
+        touchable->hover(mouse_pos);
+      }
+    }
+    BeginDrawing();
+    ClearBackground(RAYWHITE);
+    {
+      rendering::Mode3D frame(&camera);
+
+      if (state.pallet_view) state.pallet_view->draw();
+
+      if (collision.hit) {
+        DrawCube(collision.point, 0.3f, 0.3f, 0.3f, cursorColor);
+        DrawCubeWires(collision.point, 0.3f, 0.3f, 0.3f, RED);
+        auto normalEnd = collision.point + collision.normal;
+        DrawLine3D(collision.point, normalEnd, RED);
+      }
+      if (!(hitObjectName == "Ground" || hitObjectName == "None") && state.pallet_view &&
+          state.pallet_view->active_pallet()) {
+        const auto& box_pos = state_ptr->data->box_positions(*state.pallet_view->active_pallet()).at(hitObjectName);
+        graphics::drawBoxOutline(*state_ptr->data, box_pos, box_pos.color());
+      }
+
+      DrawRay(ray, MAROON);
+
+      DrawGrid(1000, 2.0f);
+
+      for (auto& touchable : state.touchables) {
+        touchable->draw();
+      }  // TODO
+    }
+
+    // DrawText(TextFormat("Hit Object: %s", hitObjectName.c_str()), 10, 50, 10,
+    // BLACK);
 
     if (collision.hit) {
-      DrawCube(collision.point, 0.3f, 0.3f, 0.3f, cursorColor);
-      DrawCubeWires(collision.point, 0.3f, 0.3f, 0.3f, RED);
-      auto normalEnd = collision.point + collision.normal;
-      DrawLine3D(collision.point, normalEnd, RED);
-    }
-    if (!(hitObjectName == "Ground" || hitObjectName == "None") && state.pallet_view &&
-        state.pallet_view->active_pallet()) {
-      const auto& box_pos = state_ptr->data->box_positions(*state.pallet_view->active_pallet()).at(hitObjectName);
-      graphics::drawBoxOutline(*state_ptr->data, box_pos, box_pos.color());
+      int ypos = 50;
+
+      if (!(hitObjectName == "Ground" || hitObjectName == "None") && state.pallet_view &&
+          state.pallet_view->active_pallet()) {
+        const auto& box_pos = state_ptr->data->box_positions(*state.pallet_view->active_pallet()).at(hitObjectName);
+        DrawText(TextFormat("Box Id: %d", std::stoi(box_pos.id())), 10, ypos += 15, 10, BLACK);
+        DrawText(TextFormat("Box Type id: %s", box_pos.box_type_id().c_str()), 10, ypos += 15, 10, BLACK);
+        DrawText(TextFormat("Items: %d", state_ptr->data->box_types().at(box_pos.box_type_id()).items().size()), 10,
+                 ypos += 15, 10, BLACK);
+      }
+
+      ypos += 150;
+
+      // DrawText(TextFormat("Distance: %3.2f", collision.distance), 10, ypos, 10, BLACK);
+
+      // DrawText(TextFormat("Hit Pos: %3.2f %3.2f %3.2f", collision.point.x, collision.point.y, collision.point.z), 10,
+      //          ypos + 15, 10, BLACK);
+
+      // DrawText(TextFormat("Hit Norm: %3.2f %3.2f %3.2f", collision.normal.x, collision.normal.y, collision.normal.z),
+      // 10,
+      //          ypos + 30, 10, BLACK);
     }
 
-    DrawRay(ray, MAROON);
+    // DrawFPS(10, 10);
 
-    DrawGrid(1000, 2.0f);
+    if (state.alert) {
+      state.update();
+      DrawText(state.alert->text.c_str(), 20, 20, 20, colors::MAROON1_C);
+    }
 
     for (auto& touchable : state.touchables) {
       touchable->draw();
-    }  // TODO
-  }
-
-  // DrawText(TextFormat("Hit Object: %s", hitObjectName.c_str()), 10, 50, 10,
-  // BLACK);
-
-  if (collision.hit) {
-    int ypos = 50;
-
-    if (!(hitObjectName == "Ground" || hitObjectName == "None") && state.pallet_view &&
-        state.pallet_view->active_pallet()) {
-      const auto& box_pos = state_ptr->data->box_positions(*state.pallet_view->active_pallet()).at(hitObjectName);
-      DrawText(TextFormat("Box Id: %d", std::stoi(box_pos.id())), 10, ypos += 15, 10, BLACK);
-      DrawText(TextFormat("Box Type id: %s", box_pos.box_type_id().c_str()), 10, ypos += 15, 10, BLACK);
-      DrawText(TextFormat("Items: %d", state_ptr->data->box_types().at(box_pos.box_type_id()).items().size()), 10,
-               ypos += 15, 10, BLACK);
     }
 
-    ypos += 150;
+    EndDrawing();
+    static auto last_b = std::chrono::system_clock::now();
+    auto now = std::chrono::system_clock::now();
+    if (now - last_b > std::chrono::milliseconds(1000) && IsKeyDown(KEY_B)) {
+      ::SetWindowSize(state.window_width, state.window_height);
+      for (int i = 10; i < 210; i += 20) {
+        DrawFPS(i, i);
+        EndDrawing();
+        auto screenshot = LoadImageFromScreen();
+        auto image_png = utils::toPngBase64(screenshot);
+        // rem_std::cout << image_png << "\n";
 
-    // DrawText(TextFormat("Distance: %3.2f", collision.distance), 10, ypos, 10, BLACK);
-
-    // DrawText(TextFormat("Hit Pos: %3.2f %3.2f %3.2f", collision.point.x, collision.point.y, collision.point.z), 10,
-    //          ypos + 15, 10, BLACK);
-
-    // DrawText(TextFormat("Hit Norm: %3.2f %3.2f %3.2f", collision.normal.x, collision.normal.y, collision.normal.z),
-    // 10,
-    //          ypos + 30, 10, BLACK);
-  }
-
-  // DrawFPS(10, 10);
-
-  if (state.alert) {
-    state.update();
-    DrawText(state.alert->text.c_str(), 20, 20, 20, colors::MAROON1_C);
-  }
-
-  for (auto& touchable : state.touchables) {
-    touchable->draw();
-  }
-
-  EndDrawing();
-  static auto last_b = std::chrono::system_clock::now();
-  auto now = std::chrono::system_clock::now();
-  if (now - last_b > std::chrono::milliseconds(1000) && IsKeyDown(KEY_B)) {
-    ::SetWindowSize(state.window_width, state.window_height);
-    for (int i = 10; i < 210; i += 20) {
-      DrawFPS(i, i);
-      EndDrawing();
-      auto screenshot = LoadImageFromScreen();
-      auto image_png = utils::toPngBase64(screenshot);
-      // rem_std::cout << image_png << "\n";
-
-      UnloadImage(screenshot);
+        UnloadImage(screenshot);
+      }
+      last_b = now;
+      // skip_frame = true;
+      auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - now);
+      // rem_std::cout << "Total time: " << elapsed.count() << "ms\n";
     }
-    last_b = now;
-    // skip_frame = true;
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - now);
-    // rem_std::cout << "Total time: " << elapsed.count() << "ms\n";
+  } catch (const std::exception& e) {
+#ifdef EMSCRIPTEN
+    emscripten::val::global("window").call<void>("showAlert", std::string(e.what()));
+#else
+    std::cerr << e.what() << std::endl;
+#endif
   }
 }
 
