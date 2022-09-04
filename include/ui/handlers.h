@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <functional>
 #include <memory>
 #include <string>
@@ -11,7 +12,7 @@ class State;
 
 namespace janowski::paczki_cpp::ui {
 
-constexpr int kMaxClickLength = 20; // todo: change to std::chrono::duration
+constexpr auto kMaxClickLength = std::chrono::milliseconds{100};  // todo: change to std::chrono::duration
 
 struct Handler {
   Handler(std::function<bool(std::shared_ptr<pallet_viewer::State>)> pred,

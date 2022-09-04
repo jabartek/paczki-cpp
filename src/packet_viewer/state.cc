@@ -26,10 +26,11 @@ void State::drawObjects() {
 void State::handleObjects() {
   static int left_button_lenght{0};
   static int right_button_lenght{0};
-  auto mouse_pos = GetMousePosition();
+  const auto fps = GetFPS();
+  const auto mouse_pos = GetMousePosition();
   if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
     left_button_lenght++;
-    if (left_button_lenght > ui::kMaxClickLength) {
+    if (left_button_lenght > ui::kMaxClickLength.count() / fps) {
       // rem_std::cout << "Left button pressed at " << mouse_pos.x << "," << mouse_pos.y << "\n";
       for (auto& touchable : touchables_) {
         if (!touchable->isOver(mouse_pos)) continue;
@@ -39,7 +40,7 @@ void State::handleObjects() {
   }
   if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
     right_button_lenght++;
-    if (right_button_lenght > ui::kMaxClickLength) {
+    if (right_button_lenght > ui::kMaxClickLength.count() / fps) {
       // rem_std::cout << "Right button pressed at " << mouse_pos.x << "," << mouse_pos.y << "\n";
       for (auto& touchable : touchables_) {
         if (!touchable->isOver(mouse_pos)) continue;
@@ -48,7 +49,7 @@ void State::handleObjects() {
     }
   }
   if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
-    if (left_button_lenght <= ui::kMaxClickLength) {
+    if (left_button_lenght <= ui::kMaxClickLength.count() / fps) {
       // rem_std::cout << "Left button clicked at " << mouse_pos.x << "," << mouse_pos.y << "\n";
       for (auto& touchable : touchables_) {
         if (!touchable->isOver(mouse_pos)) continue;
@@ -63,7 +64,7 @@ void State::handleObjects() {
     left_button_lenght = 0;
   }
   if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT)) {
-    if (right_button_lenght <= ui::kMaxClickLength) {
+    if (right_button_lenght <= ui::kMaxClickLength.count() / fps) {
       // rem_std::cout << "Right button clicked at " << mouse_pos.x << "," << mouse_pos.y << "\n";
       for (auto& touchable : touchables_) {
         if (!touchable->isOver(mouse_pos)) continue;

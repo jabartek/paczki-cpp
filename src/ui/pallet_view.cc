@@ -121,6 +121,10 @@ void PalletView::draw() {
   } else {
     drawVisible();
   }
+  if (hovered_box_) {
+    const auto& box_pos = data_->box_positions(*active_pallet_).at(*hovered_box_);
+    graphics::drawBoxOutline(*data_, box_pos, box_pos.color());
+  }
   if (selected_box_pos()) {
     cursor_.draw();
   }
@@ -264,6 +268,8 @@ void PalletView::rightClick(const Vector2& pos) {
     unselectBoxPos();
   }
 }
+
+void PalletView::hover(const Vector2& pos) { hovered_box_ = findBox(pos); }
 
 std::optional<std::string> PalletView::selected_box_pos() const {
   return (selected_ && std::holds_alternative<BoxPosSelection>(*selected_))

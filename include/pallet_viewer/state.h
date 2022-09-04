@@ -25,8 +25,10 @@ class State : public StateBase {
   std::vector<std::unique_ptr<ui::Touchable>> touchables;
   std::optional<ui::PalletView> pallet_view;
   std::optional<Alert> alert;
-  bool skip_frame{false};
   std::optional<std::string> file_to_load{};
+
+  std::optional<std::chrono::time_point<std::chrono::system_clock>> left_button_start{};
+  std::optional<std::chrono::time_point<std::chrono::system_clock>> right_button_start{};
 
   State();
 

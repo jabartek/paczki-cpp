@@ -33,6 +33,7 @@ class PalletView : public Touchable {
   void leftRelease(const Vector2& pos) override;
   void leftClick(const Vector2& pos) override;
   void rightClick(const Vector2& pos) override;
+  void hover(const Vector2& pos) override;
 
   std::optional<std::string> selected_box_pos() const;
   void selectBoxPos(std::string id, bool from_callback = false);
@@ -89,5 +90,6 @@ class PalletView : public Touchable {
 
   std::optional<::Vector3> last_valid_pos_;
   std::optional<std::string> hover_box_pos_;
+  std::optional<std::string> hovered_box_;
 };
 }  // namespace janowski::paczki_cpp::ui

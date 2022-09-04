@@ -15,13 +15,13 @@ class Drawable {
 class Touchable : public Drawable {
  public:
   virtual bool isOver(const Vector2& pos) const = 0;
-  virtual void leftPress(const Vector2& /*pos*/){};
-  virtual void rightPress(const Vector2& /*pos*/){};
-  virtual void leftClick(const Vector2& /*pos*/){};
-  virtual void rightClick(const Vector2& /*pos*/){};
-  virtual void leftRelease(const Vector2& /*pos*/){};
-  virtual void rightRelease(const Vector2& /*pos*/){};
-  virtual void hover(const Vector2& /*pos*/){};
+  virtual void leftPress(const Vector2& /*pos*/) {}
+  virtual void rightPress(const Vector2& /*pos*/) {}
+  virtual void leftClick(const Vector2& /*pos*/) {}
+  virtual void rightClick(const Vector2& /*pos*/) {}
+  virtual void leftRelease(const Vector2& /*pos*/) {}
+  virtual void rightRelease(const Vector2& /*pos*/) {}
+  virtual void hover(const Vector2& /*pos*/) {}
   virtual ~Touchable() = default;
 
  protected:
