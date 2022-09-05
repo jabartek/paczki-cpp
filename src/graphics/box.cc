@@ -25,7 +25,7 @@ void drawBox(const schema::DataBase& /*data*/, const schema::BoxPos& box_pos, co
 }
 
 void drawBoxExploded(const schema::DataBase& /*data*/, const schema::BoxPos& box_pos, const schema::BoxType& box_type,
-                     const Color& color, const Vector3& center, float ratio) {  // debug
+                     const Color& color, const Vector3& center, float ratio) {
   auto size = getSize(box_pos, box_type);
   auto position = getPosition(box_pos) + (size * 0.5f);
   auto offset = position - center;
@@ -37,7 +37,7 @@ void drawBoxExploded(const schema::DataBase& /*data*/, const schema::BoxPos& box
 }
 
 void drawBoxItems(const schema::DataBase& data, const schema::BoxPos& box_pos, const schema::BoxType& box_type,
-                  const Color& color) {
+                  const Color& /*color*/) {
   for (auto& item : box_type.items()) {
     auto& sku = data.skus().at(item.sku_id);
     auto size = getItemSize(box_pos, item, sku);

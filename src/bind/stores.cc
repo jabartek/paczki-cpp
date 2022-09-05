@@ -17,7 +17,6 @@ std::unordered_map<std::string, std::list<std::function<void()>>> callbacks = {}
 std::optional<emscripten::val> store_get = std::nullopt;
 
 void addStore(std::string name, emscripten::val store) {
-  // rem_std::cout << "Hello stores " << name << "!\n";
   stores.emplace(std::make_pair(std::move(name), std::move(store)));
 }
 
@@ -35,8 +34,8 @@ emscripten::val getFrom(const std::string& name) {
 
 void setValue(const std::string& name, emscripten::val value) {
   if (!stores.contains(name)) {
-    return;  // todo debug
-    throw std::runtime_error("(setValue) No store named \"" + name + "\"!");
+    return;
+    // throw std::runtime_error("(setValue) No store named \"" + name + "\"!");
   }
   stores.at(name).call<void>("set", value);
 }
@@ -54,14 +53,14 @@ std::size_t subscribe(const std::string& store_name, std::function<void()> callb
   auto& callback_list2 = callbacks[store_name];
   callback_list2.push_back(std::move(callback));
   auto& callback_list = callbacks[store_name];
-  // rem_std::cout << "New subscription to '" << store_name << "' now at " << callback_list.size() << " callbacks! "
+
   //<< &callbacks << " " << &callback_list << " " << std::hash<std::string>{}(store_name) << "\n";
   return callback_list.size();
 }
 
 void callUpdate(const std::string& store_name) {
   auto& callback_list = callbacks[store_name];
-  // rem_std::cout << "Updating store '" << store_name << "'! " << callback_list.size() << " callbacks to run! " <<
+
   // &callbacks
   // << " " << &(callback_list) << " " << std::hash<std::string>{}(store_name) << "\n";
   std::for_each(callback_list.begin(), callback_list.end(), [](auto& f) { f(); });
@@ -79,7 +78,7 @@ void call(std::string function_name, emscripten::val arg) {
   if (!bindings.contains(function_name)) {
     throw std::runtime_error("(call) No function named \"" + function_name + "\"!");
   }
-  // rem_std::cout << "Called: " << function_name << "\n";
+
   bindings.at(function_name)(arg);
 }
 

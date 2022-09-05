@@ -12,7 +12,7 @@ class State;
 
 namespace janowski::paczki_cpp::ui {
 
-constexpr auto kMaxClickLength = std::chrono::milliseconds{100};  // todo: change to std::chrono::duration
+constexpr auto kMaxClickLength = std::chrono::milliseconds{100};
 
 struct Handler {
   Handler(std::function<bool(std::shared_ptr<pallet_viewer::State>)> pred,

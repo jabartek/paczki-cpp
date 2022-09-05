@@ -133,7 +133,7 @@ void KeyboardHandler::func(std::shared_ptr<pallet_viewer::State> state_ptr) {
                                     : pallet_viewer::State::ColorScheme::kByBoxPos);
   }
   if (IsKeyReleased(KeyboardKey::KEY_P)) {
-    // rem_std::cout << "test.json opening" << std::endl;
+    
     loadFile("test.json", state_ptr);
   }
   if (IsKeyReleased(KeyboardKey::KEY_K)) {

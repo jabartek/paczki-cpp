@@ -79,7 +79,7 @@ class BoxType {
 
   DataBase* schema_;
 
-  nlohmann::json self_;  // DEBUG
+  nlohmann::json self_;
 };
 
 void to_json(nlohmann::json& j, const BoxType& box_type);

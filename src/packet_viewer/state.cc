@@ -31,7 +31,6 @@ void State::handleObjects() {
   if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
     left_button_lenght++;
     if (left_button_lenght > ui::kMaxClickLength.count() / fps) {
-      // rem_std::cout << "Left button pressed at " << mouse_pos.x << "," << mouse_pos.y << "\n";
       for (auto& touchable : touchables_) {
         if (!touchable->isOver(mouse_pos)) continue;
         touchable->leftPress(mouse_pos);
@@ -41,7 +40,6 @@ void State::handleObjects() {
   if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
     right_button_lenght++;
     if (right_button_lenght > ui::kMaxClickLength.count() / fps) {
-      // rem_std::cout << "Right button pressed at " << mouse_pos.x << "," << mouse_pos.y << "\n";
       for (auto& touchable : touchables_) {
         if (!touchable->isOver(mouse_pos)) continue;
         touchable->rightPress(mouse_pos);
@@ -50,7 +48,6 @@ void State::handleObjects() {
   }
   if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
     if (left_button_lenght <= ui::kMaxClickLength.count() / fps) {
-      // rem_std::cout << "Left button clicked at " << mouse_pos.x << "," << mouse_pos.y << "\n";
       for (auto& touchable : touchables_) {
         if (!touchable->isOver(mouse_pos)) continue;
         touchable->leftClick(mouse_pos);
@@ -65,7 +62,6 @@ void State::handleObjects() {
   }
   if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT)) {
     if (right_button_lenght <= ui::kMaxClickLength.count() / fps) {
-      // rem_std::cout << "Right button clicked at " << mouse_pos.x << "," << mouse_pos.y << "\n";
       for (auto& touchable : touchables_) {
         if (!touchable->isOver(mouse_pos)) continue;
         touchable->rightClick(mouse_pos);
@@ -93,7 +89,7 @@ void State::subscribeAll() {
     auto parser = emscripten::val::global("JSON");
     auto json_stringified = parser.call<emscripten::val>("stringify", em_val);
     auto json = nlohmann::json::parse(json_stringified.as<std::string>());
-    // rem_std::cout << json_stringified.as<std::string>() << "\n";
+
     this->data().setSkus(json);
   });
   bind::subscribe("box_type_list", [this]() {
@@ -104,7 +100,7 @@ void State::subscribeAll() {
     auto parser = emscripten::val::global("JSON");
     auto json_stringified = parser.call<emscripten::val>("stringify", em_val);
     auto json = nlohmann::json::parse(json_stringified.as<std::string>());
-    // rem_std::cout << json_stringified.as<std::string>() << "\n";
+
     this->data().setBoxTypeList(json);
   });
   bind::subscribe("active_box_type", [this]() {
@@ -114,7 +110,7 @@ void State::subscribeAll() {
       return;
     }
     auto id = em_val.as<std::string>();
-    // rem_std::cout << "New active box type! " << id << "\n";
+
     this->selected_box_type_ = id;
     try {
       const auto& box_type = this->data_.box_types().at(*this->selected_box_type_);
@@ -124,7 +120,6 @@ void State::subscribeAll() {
       this->camera->set_distance(distance);
       this->camera->updateCamera();
     } catch (...) {
-      // todo debug
     }
   });
 }

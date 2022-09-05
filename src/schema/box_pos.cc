@@ -1,7 +1,7 @@
 #include "schema/box_pos.h"
 
 #include <cmath>
-#include <iostream>  // debug
+#include <iostream>  
 #include <utility>
 
 #include "colors.h"

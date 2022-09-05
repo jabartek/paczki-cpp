@@ -63,7 +63,7 @@ Data::Data(nlohmann::json& json) {
   if (pallet_ids_.empty()) {
     throw IncorrectDataException("Missing pallet data!");
   }
-  // rem_std::cout << "Załadowano " << pallet_ids_.size() << " palet!" << std::endl;
+  
 }
 
 Data::Data(Data&& o) : pallets_(std::move(o.pallets_)), box_types_(std::move(o.box_types_)), skus_(std::move(o.skus_)) {
@@ -127,7 +127,7 @@ void Data::putBoxOn(const std::string& pallet_id, const std::string& box_pos_id)
 // }
 
 nlohmann::json Data::dump() {
-  // rem_std::cout << "Data::dump()! \n";
+  
   nlohmann::json j{};
   j["SKUList"] = {};
   for (const auto& [id, sku] : skus_) {

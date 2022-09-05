@@ -35,9 +35,9 @@ void mainLoop() {
     }
     tp = t;
     for (const auto& [id, sku] : state->data().skus()) {
-      // rem_std::cout << sku.id() << ", ";
+      
     }
-    // rem_std::cout << std::endl;
+    
   }
   BeginMode3D(state->camera->get());
   DrawGrid(1000, 2.0f);
@@ -47,11 +47,11 @@ void mainLoop() {
       graphics::drawBoxItems(state->data(), schema::BoxPos::null(), state->data().box_types().at(*selected),
                              Color{128, 128, 128, 255});
     } catch (...) {
-      // rem_std::cout << "Selected: " << *selected << "\nKeys";
+      
       for (const auto& [k, v] : state->data().box_types()) {
-        // rem_std::cout << k << ", ";
+        
       }
-      // rem_std::cout << "\n";
+      
     }
   }
   EndMode3D();

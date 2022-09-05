@@ -53,7 +53,7 @@ BoxType::BoxType(nlohmann::json& json, DataBase* schema) {
     color_b_ = color.b;
   }
   schema_ = schema;
-  self_ = json;  // debug
+  self_ = json;  
 
   items_.reserve(json["Num"].get<std::size_t>());
   for (auto& item : json["Items"]) {
@@ -61,7 +61,6 @@ BoxType::BoxType(nlohmann::json& json, DataBase* schema) {
     items_native_ = true;
   }
   if (schema_ && sku_id_ && items_.empty() && schema->skus().contains(*sku_id_)) {
-    // rem_std::cout << "Hello SKU: " << *sku_id_ << "\n";  // debug
     const auto& sku = schema->skus().at(*sku_id_);
     const bool rotated = !(size_x_ == sku.size_x() && size_y_ == sku.size_y() && size_z_ == sku.size_z());
     items_.emplace_back(*sku_id_, rotated);
@@ -90,7 +89,7 @@ nlohmann::json BoxType::json() const {
     val["Items"] = nlohmann::json(items_);
   } else {
     val["Num"] = items_.size();
-    val["Items"] = nlohmann::json(items_);  // todo debug converted_sku
+    val["Items"] = nlohmann::json(items_);
   }
   return val;
 }

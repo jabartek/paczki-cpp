@@ -1,6 +1,6 @@
 #include "ui/pallet_view.h"
 
-#include <iostream>  // debug
+#include <iostream>  
 #include <limits>
 #include <memory>
 #include <optional>
@@ -23,8 +23,6 @@
 
 #include "lib/emscripten_wrapper.h"
 
-// EM_JS(void, update_color, (), { document.getElementById("kolorek").style.backgroundColor = Paczka["color"]; });
-
 #endif
 
 using namespace janowski::paczki_cpp::math;
@@ -44,7 +42,6 @@ PalletView::PalletView(std::shared_ptr<schema::Data> data, std::shared_ptr<palle
       unselectBoxPos();
       this->takeBoxOff(box_id);
     } catch (...) {
-      // todo alert js
     }
   });
   bind::registerFunction("putBoxOn", [this](emscripten::val id_val) -> void {
@@ -52,7 +49,6 @@ PalletView::PalletView(std::shared_ptr<schema::Data> data, std::shared_ptr<palle
       std::string box_id = id_val.as<std::string>();
       this->putBoxOn(box_id);
     } catch (...) {
-      // todo alert js
     }
   });
 
@@ -65,7 +61,6 @@ PalletView::PalletView(std::shared_ptr<schema::Data> data, std::shared_ptr<palle
     try {
       this->selectBoxType(id_val.as<std::string>(), true);
     } catch (...) {
-      // todo alert
     }
   });
   bind::subscribe("selected_pallet", [this]() {
@@ -73,7 +68,6 @@ PalletView::PalletView(std::shared_ptr<schema::Data> data, std::shared_ptr<palle
     try {
       this->set_active_pallet(id_val.as<std::string>(), true);
     } catch (...) {
-      // todo alert
     }
   });
   bind::subscribe("box_pos_order_it", [this]() {
@@ -87,7 +81,6 @@ PalletView::PalletView(std::shared_ptr<schema::Data> data, std::shared_ptr<palle
         last_visible_ = it >= order_len ? order_len - 1 : it;
       }
     } catch (...) {
-      // todo alert
     }
   });
   bind::subscribe("color_by_box_pos", [this]() {
@@ -95,7 +88,6 @@ PalletView::PalletView(std::shared_ptr<schema::Data> data, std::shared_ptr<palle
     try {
       state_->set_color_scheme(val.as<bool>() ? StateBase::ColorScheme::kByBoxPos : StateBase::ColorScheme::kByBoxType);
     } catch (...) {
-      std::cout << "bind::subscribe(\"color_by_box_pos\")\n";
     }
   });
 #endif
@@ -115,7 +107,7 @@ void PalletView::draw() {
   if (!state_) return;
   if (!selected_ && !last_visible_) {
     drawStandard();
-    // drawExploded(frame);  // debug
+    // drawExploded(frame);  
   } else if (selected_) {
     drawSelected();
   } else {
@@ -163,7 +155,7 @@ void PalletView::drawVisible() {
   }
 }
 
-void PalletView::drawExploded() {  // debug
+void PalletView::drawExploded() {  
   if (!data_ || !state_ || !active_pallet_) return;
   for (const auto& [id, cube] : data_->box_positions(*active_pallet_)) {
     auto color = state_->color_scheme() == pallet_viewer::State::ColorScheme::kByBoxPos
@@ -257,7 +249,7 @@ void PalletView::leftClick(const Vector2& pos) {
     ::Vector3 cursor_pos =
         (graphics::getPosition(box_pos) + size * 0.5f + ::Vector3{0.f, size.y, 0.f} * 0.5f) * graphics::kSizeMultiplier;
     cursor_ = ui::Cursor3D(state_, 1.5f, cursor_pos);
-    // rem_std::cout << cursor_pos.x << "\t" << cursor_pos.y << "\t" << cursor_pos.z << "\n";
+    
   }
 }
 
@@ -305,7 +297,7 @@ void PalletView::selectBoxType(std::string id, bool from_callback) {
     selected_ = BoxTypeSelection{id};
     if (!from_callback) bind::setValue("active_box_type", emscripten::val{id});
   } else {
-    // rem_std::cout << "PalletView::selectBoxType: No box with id: " << id << "\n";
+    
   }
 }
 void PalletView::unselectBoxType(bool from_callback) {
@@ -320,7 +312,7 @@ void PalletView::selectBoxTypeFromBoxPos() {
           data_->box_positions(*active_pallet_).at(std::get<BoxPosSelection>(*selected_)).box_type_id();
       selectBoxType(box_type);
     } catch (...) {
-      // rem_std::cout << "Could not select BoxType from BoxPos!\n";
+      
     }
   }
 }
@@ -361,7 +353,7 @@ void PalletView::set_active_pallet(const std::string& id, bool from_callback) {
   bind::setValue("active_box_type", emscripten::val::null());
   bind::setValue("active_sku", emscripten::val::null());
   const auto j = nlohmann::json{data_->box_order(id)};
-  // rem_std::cout << "\n1\n2\n3\n5\nBoxOrder"<< j << "\n1\n2\n3";
+  
   bind::setValue("box_pos_order", j);
 #endif
   active_pallet_ = id;

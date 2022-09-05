@@ -82,7 +82,7 @@ void mainLoop() {
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
       if (!state.left_button_start) state.left_button_start = time_now;
       if (time_now - *state.left_button_start > ui::kMaxClickLength) {
-        // rem_std::cout << "Left button pressed at " << mouse_pos.x << "," << mouse_pos.y << "\n";
+        
         for (auto& touchable : state.touchables) {
           if (!touchable->isOver(mouse_pos)) continue;
           touchable->leftPress(mouse_pos);
@@ -96,7 +96,7 @@ void mainLoop() {
     if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
       if (!state.right_button_start) state.right_button_start = time_now;
       if (time_now - *state.right_button_start > ui::kMaxClickLength) {
-        // rem_std::cout << "Right button pressed at " << mouse_pos.x << "," << mouse_pos.y << "\n";
+        
         for (auto& touchable : state.touchables) {
           if (!touchable->isOver(mouse_pos)) continue;
           touchable->rightPress(mouse_pos);
@@ -106,7 +106,7 @@ void mainLoop() {
     if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
       if (!state.left_button_start) state.left_button_start = time_now;
       if (time_now - *state.left_button_start <= ui::kMaxClickLength) {
-        // rem_std::cout << "Left button clicked at " << mouse_pos.x << "," << mouse_pos.y << "\n";
+        
         for (auto& touchable : state.touchables) {
           if (!touchable->isOver(mouse_pos)) continue;
           touchable->leftClick(mouse_pos);
@@ -129,7 +129,7 @@ void mainLoop() {
     if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT)) {
       if (!state.right_button_start) state.right_button_start = time_now;
       if (time_now - *state.right_button_start <= ui::kMaxClickLength) {
-        // rem_std::cout << "Right button clicked at " << mouse_pos.x << "," << mouse_pos.y << "\n";
+        
         for (auto& touchable : state.touchables) {
           if (!touchable->isOver(mouse_pos)) continue;
           touchable->rightClick(mouse_pos);

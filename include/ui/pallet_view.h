@@ -65,8 +65,8 @@ class PalletView : public Touchable {
 
  private:
   void drawStandard();
-  void drawExploded();  // debug
-  void drawVisible();   // debug
+  void drawExploded();  
+  void drawVisible();   
   void drawSelected();
 
   void prepareLastVisible();

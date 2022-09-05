@@ -18,7 +18,7 @@ void drawBoxOutline(const schema::DataBase& data, const schema::BoxPos& box_pos,
                     bool invert = true);
 
 void drawBoxExploded(const schema::DataBase& data, const schema::BoxPos& box_pos, const schema::BoxType& box_type,
-                     const Color& color, const Vector3& center, float ratio);  // debug
+                     const Color& color, const Vector3& center, float ratio);
 
 Vector3 getSize(const schema::BoxPos& box_pos, const schema::BoxType& box_type);
 

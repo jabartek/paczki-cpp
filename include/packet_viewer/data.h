@@ -34,7 +34,7 @@ class Data : public schema::DataBase {
       if (!box_type.contains("$id")) {
         continue;
       }
-      // rem_std::cout << box_type.dump() << "\n"; //todo debug
+      
       schema::BoxType new_box_type{box_type, this};
       if (!new_box_type.ref()) continue;
       box_type_store_.emplace(*new_box_type.ref(), std::move(new_box_type));

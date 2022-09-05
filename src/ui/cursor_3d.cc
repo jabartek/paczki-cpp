@@ -18,7 +18,7 @@ void Cube::draw() const { DrawCube(position + size * 0.5f, size.x, size.y, size.
 Cursor3D::Cursor3D(std::shared_ptr<pallet_viewer::State> state, float size, ::Vector3 pos)
     : Touchable(), state_(state), size_(size), pos_(pos) {
   updateCubes();
-  // rem_std::cout << "Hello Cursor3D!\n";
+  
 }
 
 void Cursor3D::draw() {
@@ -32,7 +32,7 @@ bool Cursor3D::isOver(const Vector2& /*pos*/) const { return true; }
 
 void Cursor3D::leftPress(const Vector2& pos) {
   if (!state_ || !state_->camera) return;
-  // rem_std::cout << "Cursor3D::leftPress\tx:\t" << pos.x << "\ty:\t" << pos.y << "\n";
+  
   updateCubes();
   auto camera = state_->camera->get();
   auto ray = GetMouseRay(pos, camera);
@@ -44,7 +44,7 @@ void Cursor3D::leftPress(const Vector2& pos) {
   {
     auto collision_x = GetRayCollisionBox(ray, cube_x_.bounding_box());
     if (collision_x.hit) {
-      // rem_std::cout << "Hit X!\n";
+      
       if (collision_x.distance < collision.distance) {
         hit_cube = &cube_x_;
         collision = collision_x;
@@ -54,7 +54,7 @@ void Cursor3D::leftPress(const Vector2& pos) {
   {
     auto collision_y = GetRayCollisionBox(ray, cube_y_.bounding_box());
     if (collision_y.hit) {
-      // rem_std::cout << "Hit Y!\n";
+      
       if (collision_y.distance < collision.distance) {
         hit_cube = &cube_y_;
         collision = collision_y;
@@ -64,7 +64,7 @@ void Cursor3D::leftPress(const Vector2& pos) {
   {
     auto collision_z = GetRayCollisionBox(ray, cube_z_.bounding_box());
     if (collision_z.hit) {
-      // rem_std::cout << "Hit Z!\n";
+      
       if (collision_z.distance < collision.distance) {
         hit_cube = &cube_z_;
         collision = collision_z;
@@ -108,16 +108,12 @@ void Cursor3D::leftPress(const Vector2& pos) {
     if (hit_cube == &cube_x_) {
       last_cube_ = CursorCube::X;
       pos_.x += col.point.x - col_before.point.x;
-      std::cout << "Move X\n";
     } else if (hit_cube == &cube_y_) {
       last_cube_ = CursorCube::Y;
       pos_.y += col.point.y - col_before.point.y;
-      std::cout << "Move Y\n";
     } else if (hit_cube == &cube_z_) {
       last_cube_ = CursorCube::Z;
       pos_.z += col_z.point.z - col_before_z.point.z;
-      std::cout << "Move Z\n";
-      // rem_std::cout << "Col Z point:\t" << col_z.point.x << "\t" << col_z.point.y << "\t" << col_z.point.z << "\t\n";
     }
   }
 }
